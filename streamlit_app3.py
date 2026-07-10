@@ -129,6 +129,15 @@ with tab1:
     st.markdown("請選擇使用 方法 A 或 方法 B 輸入，並點擊下方按鈕查詢。")
     
     col_input1, col_input2 = st.columns(2)
+
+    # 找到這行並修改成這樣：
+dp = st.date_input(
+    "選擇日期：", 
+    value=st.session_state['latest_date'], 
+    min_value=date(1900, 1, 1), 
+    max_value=date(2100, 12, 31), 
+    key="tab1_dp"
+)
     
     target_date = None
     is_triggered = False
