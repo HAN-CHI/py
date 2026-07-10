@@ -426,8 +426,8 @@ with tab3:
             
         except Exception as e:
             st.error(f"❌ 處理失敗，請確認年份是否在 1900~2100 之間（錯誤原因: {e}）")
-
-st.markdown("---")
+        
+        st.markdown("---")
             st.subheader("📜 民俗堪輿對照表 (固定參考)")
             
             with st.expander("點擊展開：查看生肖方位與月煞/年煞對照表"):
