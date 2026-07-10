@@ -126,7 +126,7 @@ tab1, tab2, tab3 = st.tabs([
 with tab1:
     st.header("📌 單日萬能查詢 (國曆/農曆互轉)")
     
-    # 使用 radio 選擇模式，保留你原本的輸入方式
+    # 選擇模式
     mode = st.radio("請選擇轉換方式：", ["國曆 ➔ 農曆", "農曆 ➔ 國曆"], horizontal=True)
     st.markdown("---")
     
@@ -134,15 +134,14 @@ with tab1:
     is_triggered = False
 
     if mode == "國曆 ➔ 農曆":
+        # (保持原樣...)
         col_input1, col_input2 = st.columns(2)
-        
         with col_input1:
             st.subheader("📍 方法 A (日曆選單)")
             date_picker = st.date_input("選擇日期：", st.session_state['latest_date'], key="tab1_dp")
             if st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a"):
                 target_date = clean_and_parse_date(date_picker)
                 is_triggered = True
-                
         with col_input2:
             st.subheader("📍 方法 B (文字輸入)")
             ld = st.session_state['latest_date']
@@ -152,11 +151,17 @@ with tab1:
                 target_date = clean_and_parse_date(date_text)
                 is_triggered = True
 
-    else: # 農曆 ➔ 國曆
+    else: # 農曆 ➔ 國曆 (優化版)
         st.subheader("📍 方法 C (農曆輸入)")
+        
+        # 新增曆法選擇
+        cal_type = st.radio("農曆對應的年份格式：", ["西元曆", "中華民國曆"], horizontal=True)
+        
         c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
         with c1:
-            l_year = st.number_input("農曆年份", 1900, 2100, 2026)
+            # 根據選擇顯示年份提示
+            year_label = "農曆年份 (西元)" if cal_type == "西元曆" else "農曆年份 (民國)"
+            l_year = st.number_input(year_label, 1, 2100, 2026)
         with c2:
             l_month = st.number_input("月份", 1, 12, 1)
         with c3:
@@ -166,7 +171,9 @@ with tab1:
             
         if st.button("🚀 執行農曆轉國曆查詢", use_container_width=True, key="tab1_btn_c"):
             try:
-                target_date = ZhDate(l_year, l_month, l_day, is_leap).to_datetime()
+                # 轉換年份邏輯
+                actual_year = l_year + 1911 if cal_type == "中華民國曆" else l_year
+                target_date = ZhDate(actual_year, l_month, l_day, is_leap).to_datetime()
                 is_triggered = True
             except Exception as e:
                 st.error(f"❌ 日期輸入錯誤，請確認該農曆日期是否存在。")
@@ -191,8 +198,6 @@ with tab1:
             st.success(f"💡 完整農曆中文表示：{lunar.chinese()}")
         except Exception as e:
             st.error(f"❌ 轉換錯誤: {e}")
-    elif is_triggered and not target_date:
-        st.warning("⚠️ 無法識別此日期格式，請確認輸入內容。")
 
 # ==========================================
 # 🕯️ 分頁三：頭七/百日/對年計算機
