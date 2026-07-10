@@ -96,7 +96,7 @@ def clean_and_parse_date(date_val):
                 return datetime(y, m, d)
             except:
                 return None
-                
+
         elif len(nums) == 1 and len(nums[0]) in [6, 7, 8]:
             s = nums[0]
             try:
@@ -130,20 +130,18 @@ with tab1:
     
     col_input1, col_input2 = st.columns(2)
 
-    # 找到這行並修改成這樣：
-dp = st.date_input(
-    "選擇日期：", 
-    value=st.session_state['latest_date'], 
-    min_value=date(1900, 1, 1), 
-    max_value=date(2100, 12, 31), 
-    key="tab1_dp"
-)
-    
     target_date = None
     is_triggered = False
     
     with col_input1:
         st.subheader("📍 方法 A")
+        date_picker = st.date_input(
+            "用日曆選單選擇日期：", 
+            st.session_state['latest_date'], 
+            min_value=date(1900, 1, 1), 
+            max_value=date(2100, 12, 31), 
+            key="tab1_dp"
+        ) 
         date_picker = st.date_input("用日曆選單選擇日期：", st.session_state['latest_date'], key="tab1_dp")
         click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a")
         if click_a:
