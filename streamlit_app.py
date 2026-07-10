@@ -138,12 +138,7 @@ with tab1:
         col_input1, col_input2 = st.columns(2)
         with col_input1:
             st.subheader("📍 方法 A (日曆選單)")
-            date_picker = st.date_input(
-            "選擇日期：", 
-            st.session_state['latest_date'], 
-            min_value=date(1900, 1, 1), 
-            max_value=date(2100, 12, 31), 
-            key="tab1_dp")
+            date_picker = st.date_input("選擇日期：", st.session_state['latest_date'], min_value=date(1900, 1, 1), max_value=date(2100, 12, 31), key="tab1_dp")
             if st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a"):
                 target_date = clean_and_parse_date(date_picker)
                 is_triggered = True
@@ -221,12 +216,7 @@ with tab2:
     col_l, col_r = st.columns([2, 1])
     
     with col_l:
-        death_date_input = st.date_input(
-        "選擇日期：", 
-        st.session_state['latest_date'], 
-        min_value=date(1900, 1, 1), 
-        max_value=date(2100, 12, 31), 
-        key="tab3_dp")
+        death_date_input = st.date_input("選擇日期：", st.session_state['latest_date'], min_value=date(1900, 1, 1), max_value=date(2100, 12, 31), key="tab3_dp")
     
     # 🧠 核心演算法：智慧型「全域跨閏月動態掃描引擎」
     has_cross_leap = False
