@@ -12,6 +12,10 @@ st.set_page_config(
     layout="wide"
 )
 
+# 核心同步機制：初始化全域「最新日期」記憶庫，預設為今天
+if 'latest_date' not in st.session_state:
+    st.session_state['latest_date'] = date.today()
+
 st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀通用版)")
 st.markdown(
     "本系統支援西元曆、中華民國曆自動識別轉換，"
@@ -81,7 +85,7 @@ def clean_and_parse_date(date_val):
     return None
 
 # ==========================================
-# 建立網頁分頁（已新增第三個分頁）
+# 建立網頁分頁
 # ==========================================
 tab1, tab2, tab3 = st.tabs([
     "📌 單日萬能查詢", 
@@ -103,15 +107,18 @@ with tab1:
     
     with col_input1:
         st.subheader("📍 方法 A")
-        date_picker = st.date_input("用日曆選單選擇日期：", date.today())
+        date_picker = st.date_input("用日曆選單選擇日期：", st.session_state['latest_date'])
         click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True)
         if click_a:
             target_date = clean_and_parse_date(date_picker)
+            if target_date:
+                st.session_state['latest_date'] = target_date.date()
             is_triggered = True
             
     with col_input2:
         st.subheader("📍 方法 B")
-        current_minguo_str = f"{date.today().year - 1911}/{date.today().strftime('%m/%d')}"
+        ld = st.session_state['latest_date']
+        current_minguo_str = f"{ld.year - 1911}/{ld.strftime('%m/%d')}"
         date_text = st.text_input(
             "直接打字輸入（西元/民國皆可）：", 
             value=current_minguo_str, 
@@ -120,6 +127,8 @@ with tab1:
         click_b = st.button("🚀 執行方法 B 查詢", use_container_width=True)
         if click_b:
             target_date = clean_and_parse_date(date_text)
+            if target_date:
+                st.session_state['latest_date'] = target_date.date()
             is_triggered = True
         
     if is_triggered:
@@ -215,17 +224,27 @@ with tab2:
             st.error(f"💥 處理檔案時發生預期外的錯誤: {e}")
 
 # ==========================================
-# 🕯️ 分頁三：頭七/百日/對年計算機 (全新加入)
+# 🕯️ 分頁三：頭七/百日/對年計算機
 # ==========================================
 with tab3:
     st.header("🕯️ 傳統祭祀時間計算機")
     st.markdown("傳統習俗中，**往生當天即算作「第 1 天」**。本計算機依此基準精確推算。")
     
-    # 讓使用者選擇往生日期
-    death_date = st.date_input("請選擇「國曆往生日期」：", date.today())
+    # 🛠️ 調整：改用一個獨立的臨時輸入變數，預設一樣帶入全域最新日期
+    death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'])
     
-    if death_date:
-        p_dt = datetime(death_date.year, death_date.month, death_date.day)
+    # 🛠️ 新增：使用者要求的專屬計算按鈕
+    click_calc = st.button("🚀 執行祭祀日期推算", use_container_width=True)
+    
+    # 当點擊按鈕時，才正式把臨時輸入的日期寫入全域狀態變數
+    if click_calc:
+        st.session_state['latest_date'] = death_date_input
+        
+    # 核心計算一律向「全域最新狀態」看齊
+    final_calc_date = st.session_state['latest_date']
+    
+    if final_calc_date:
+        p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
         
         # 建立星期對照表
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
@@ -260,7 +279,7 @@ with tab3:
             dn_m = lunar_now.lunar_month
             dn_d = lunar_now.lunar_day
             
-            # 防錯滾動機制：如果隔年的這個月只有29天而沒30天，會自動往前找最後一天
+            # 防錯滾動機制
             for offset in range(5):
                 try:
                     test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
@@ -308,6 +327,6 @@ with tab3:
         
         st.info(
             "💡 備註：傳統民間習俗各地方可能因應性別、家族內規、是否有閏月"
-            "而有提早一天（如：切七、做百日）或調整對年日期的彈性做法。"
+            "而有提早一天或調整對年日期的彈性做法。"
             "以上提供之結果為內政部民俗標準之基本精確日期，僅供家族排程參考。"
         )
