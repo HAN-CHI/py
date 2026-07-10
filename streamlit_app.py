@@ -124,6 +124,70 @@ tab1, tab2, tab3 = st.tabs([
 # 📌 分頁一：單日萬能查詢
 # ==========================================
 with tab1:
+    st.header("單日國曆轉農曆 (支援自由文字輸入)")
+    st.markdown("請選擇使用 方法 A 或 方法 B 輸入，並點擊下方按鈕查詢。")
+    
+    col_input1, col_input2 = st.columns(2)
+    
+    target_date = None
+    is_triggered = False
+    
+    with col_input1:
+        st.subheader("📍 方法 A")
+        date_picker = st.date_input("用日曆選單選擇日期：", st.session_state['latest_date'], key="tab1_dp")
+        click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a")
+        if click_a:
+            target_date = clean_and_parse_date(date_picker)
+            if target_date:
+                st.session_state['latest_date'] = target_date.date()
+            is_triggered = True
+            
+    with col_input2:
+        st.subheader("📍 方法 B")
+        ld = st.session_state['latest_date']
+        current_minguo_str = f"{ld.year - 1911}/{ld.strftime('%m/%d')}"
+        date_text = st.text_input(
+            "直接打字輸入（西元/民國皆可）：", 
+            value=current_minguo_str, 
+            help="範例: 115/7/10 或 2026-07-10",
+            key="tab1_ti"
+        )
+        click_b = st.button("🚀 執行方法 B 查詢", use_container_width=True, key="tab1_btn_b")
+        if click_b:
+            target_date = clean_and_parse_date(date_text)
+            if target_date:
+                st.session_state['latest_date'] = target_date.date()
+            is_triggered = True
+        
+    if is_triggered:
+        if target_date:
+            try:
+                lunar = ZhDate.from_datetime(target_date)
+                minguo_year = target_date.year - 1911
+                
+                leap_prefix = "閏" if lunar.leap_month else ""
+                lunar_display = f"農曆 {leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+                ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
+                
+                st.markdown("---")
+                st.subheader("🔮 查詢對照結果：")
+                
+                cols = st.columns(4)
+                with cols[0]:
+                    st.metric(label="解析後西元國曆", value=target_date.strftime('%Y-%m-%d'))
+                with cols[1]:
+                    st.metric(label="對應中華民國曆", value=f"民國 {minguo_year} 年")
+                with cols[2]:
+                    st.metric(label="計算後農曆", value=lunar_display)
+                with cols[3]:
+                    st.metric(label="歲次干支 (生肖)", value=ganzhi_display)
+                    
+                st.success(f"💡 完整農曆中文表示：{lunar.chinese()}")
+            except Exception as e:
+                st.error(f"❌ 轉換錯誤: {e}。請確認年份是否在 1900~2100 之間。")
+        else:
+            st.warning("⚠️ 無法識別此日期格式，請重新輸入（例如：115/7/10）")
+    
     st.header("單日萬能轉換 (國曆/農曆互轉)")
     
     # 新增模式選擇
