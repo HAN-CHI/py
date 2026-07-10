@@ -400,4 +400,77 @@ with tab3:
         
         st.info(
             "💡 **民俗小常識：對年固定 12 個農曆月原則**\n\n"
-            "當往生日至隔年對年的週期中遭遇「閏月」時，活人的曆法會經歷 13 個農曆月（約
+            "當往生日至隔年對年的週期中遭遇「閏月」時，活人的曆法會經歷 13 個農曆月（約 384 天）。但依傳統「死人無閏月」之限制，"
+            "亡者的第一個年度必須扣除閏月，維持與常規年相同的 12 個農曆月。**其相隔時間總計為 354 天（若包含起始日則為 355 天）**。\n\n"
+            "本系統已全面自動化此規則：若遇跨閏月，會自動將農曆月份提前一個月並採取「對日作」辦理，確保不論有無閏月，逝者的守喪週期皆精準契合此傳統定義。"
+        )
+
+# ==========================================
+# 🦁 新增分頁四：生肖與塔位吉方查詢
+# ==========================================
+with tab4:
+    st.header("🦁 生肖與晉塔適宜方位查詢")
+    st.markdown("輸入逝者（或使用者）的出生（或往生）日期，系統將自動識別生肖，並推算適合的進塔、晉塔坐向方位。")
+    
+    col_t4_1, col_t4_2 = st.columns(2)
+    search_date = None
+    
+    with col_t4_1:
+        st.subheader("📍 方式一：用日曆選單選擇")
+        dp_t4 = st.date_input("選擇日期：", st.session_state['latest_date'], key="tab4_dp")
+        if st.button("🚀 依選單日期查詢", use_container_width=True, key="tab4_btn_a"):
+            search_date = clean_and_parse_date(dp_t4)
+            
+    with col_t4_2:
+        st.subheader("📍 方式二：直接文字輸入")
+        ld_t4 = st.session_state['latest_date']
+        minguo_str_t4 = f"{ld_t4.year - 1911}/{ld_t4.strftime('%m/%d')}"
+        ti_t4 = st.text_input(
+            "輸入西元或中華民國曆（如 54/3/22 或 1965-03-22）：", 
+            value=minguo_str_t4, 
+            key="tab4_ti"
+        )
+        if st.button("🚀 依打字日期查詢", use_container_width=True, key="tab4_btn_b"):
+            search_date = clean_and_parse_date(ti_t4)
+            
+    if search_date:
+        try:
+            # 轉換為農曆以確認精準生肖與歲次
+            lunar_t4 = ZhDate.from_datetime(search_date)
+            gz_name, zodiac_name = get_ganzhi_zodiac_details(lunar_t4.lunar_year)
+            orientations = get_tower_orientation(zodiac_name)
+            
+            st.session_state['latest_date'] = search_date.date()
+            
+            st.markdown("---")
+            st.subheader(f"🔮 【{zodiac_name}】生肖專屬命理與塔位解析")
+            
+            # 以美觀的 Metric 卡片顯示基本資訊
+            c1, c2, c3, c4 = st.columns(4)
+            with c1:
+                st.metric("輸入國曆日期", search_date.strftime('%Y-%m-%d'))
+            with c2:
+                st.metric("對應民國紀年", f"民國 {search_date.year - 1911} 年")
+            with c3:
+                st.metric("對應農曆歲次", f"{gz_name} 年")
+            with c4:
+                st.metric("本命生肖", zodiac_name)
+                
+            # 顯示方位推算結果表格
+            oriented_data = {
+                "評等分類": ["🟢 最佳首選吉方 (大吉)", "🟡 次佳配選方位 (中吉)", "🔴 絕不可選煞方 (大凶)"],
+                "建議塔位坐向 (白話地理方位)": [orientations["吉方"], orientations["次吉"], orientations["煞方"]],
+                "風水堪輿說明說明": [
+                    "此為本命三合、三會、或相生之本命祿位，進塔後最利於骨灰安穩、福廕子孫。",
+                    "此方位雖非最優，但若與家族墓園、現成塔位環境衝突時，可作為折衷妥協之選。",
+                    "此方向與本命生肖相沖（歲破、地支相沖），民俗上認為會磁場不合，務必避開。"
+                ]
+            }
+            st.dataframe(pd.DataFrame(oriented_data), use_container_width=True)
+            
+            st.caption(
+                "💡 **地理小知識：** 這裡所說的『坐向』是指骨灰罈入塔位後，其『刻字正面（或照片正面）』所面朝的反方向。例如：『坐北朝南』意即逝者照片背對北方，面向南方看出去。"
+            )
+            
+        except Exception as e:
+            st.error(f"❌ 處理失敗，請確認年份是否在 1900~2100 之間（錯誤原因: {e}）")
