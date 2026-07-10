@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 import io
 import re
@@ -12,10 +12,10 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國通用版)")
+st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀通用版)")
 st.markdown(
-    "本系統已全面優化！支援西元曆（如 2026-07-10）"
-    "與中華民國曆（如 115-07-10、1150710）自動識別轉換。"
+    "本系統支援西元曆、中華民國曆自動識別轉換，"
+    "並內建傳統民俗頭七、百日、對年之精準祭祀時間計算。"
 )
 
 # ==========================================
@@ -81,9 +81,13 @@ def clean_and_parse_date(date_val):
     return None
 
 # ==========================================
-# 建立網頁分頁
+# 建立網頁分頁（已新增第三個分頁）
 # ==========================================
-tab1, tab2 = st.tabs(["📌 單日萬能查詢", "📊 Excel 混合批次轉換"])
+tab1, tab2, tab3 = st.tabs([
+    "📌 單日萬能查詢", 
+    "📊 Excel 混合批次轉換", 
+    "🕯️ 頭七/百日/對年計算機"
+])
 
 # ==========================================
 # 📌 分頁一：單日萬能查詢
@@ -124,7 +128,6 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
-                # 🛠️ 修正：將屬性改為正確的 leap_month
                 leap_prefix = "閏 " if lunar.leap_month else ""
                 lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
                 ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
@@ -178,8 +181,6 @@ with tab2:
                             try:
                                 mingo = f"民國 {dt.year - 1911} 年"
                                 lunar_obj = ZhDate.from_datetime(dt)
-                                
-                                # 🛠️ 修正：批次轉換也改為 leap_month
                                 leap_prefix = "閏" if lunar_obj.leap_month else ""
                                 
                                 return pd.Series([
@@ -212,3 +213,101 @@ with tab2:
                     
         except Exception as e:
             st.error(f"💥 處理檔案時發生預期外的錯誤: {e}")
+
+# ==========================================
+# 🕯️ 分頁三：頭七/百日/對年計算機 (全新加入)
+# ==========================================
+with tab3:
+    st.header("🕯️ 傳統祭祀時間計算機")
+    st.markdown("傳統習俗中，**往生當天即算作「第 1 天」**。本計算機依此基準精確推算。")
+    
+    # 讓使用者選擇往生日期
+    death_date = st.date_input("請選擇「國曆往生日期」：", date.today())
+    
+    if death_date:
+        p_dt = datetime(death_date.year, death_date.month, death_date.day)
+        
+        # 建立星期對照表
+        week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+        
+        # 輔助函式：取得農曆顯示字串
+        def get_lunar_str(dt_obj):
+            try:
+                l = ZhDate.from_datetime(dt_obj)
+                lp = "閏" if l.leap_month else ""
+                return f"農曆 {lp}{l.lunar_month}月{l.lunar_day}日"
+            except:
+                return "無法計算"
+                
+        # 1. 往生當天 (第 1 天)
+        p_lunar = get_lunar_str(p_dt)
+        
+        # 2. 頭七 (第 7 天) -> 往生 + 6 天
+        t7_dt = p_dt + timedelta(days=6)
+        t7_lunar = get_lunar_str(t7_dt)
+        
+        # 3. 百日 (第 100 天) -> 往生 + 99 天
+        b100_dt = p_dt + timedelta(days=99)
+        b100_lunar = get_lunar_str(b100_dt)
+        
+        # 4. 對年 (隔年農曆同月同日)
+        dn_dt_display = "無法計算"
+        dn_lunar_display = "無法計算"
+        dn_week_display = "無法計算"
+        try:
+            lunar_now = ZhDate.from_datetime(p_dt)
+            dn_y = lunar_now.lunar_year + 1
+            dn_m = lunar_now.lunar_month
+            dn_d = lunar_now.lunar_day
+            
+            # 防錯滾動機制：如果隔年的這個月只有29天而沒30天，會自動往前找最後一天
+            for offset in range(5):
+                try:
+                    test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
+                    test_dt = test_lunar.to_datetime()
+                    
+                    dn_dt_display = test_dt.strftime('%Y-%m-%d')
+                    dn_week_display = week_names[test_dt.weekday()]
+                    
+                    lp = "閏" if test_lunar.leap_month else ""
+                    dn_lunar_display = f"農曆 {lp}{test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                    break
+                except:
+                    continue
+        except:
+            pass
+            
+        # 彙整成表格資料
+        calc_data = {
+            "祭祀項目": ["往生當天 (第 1 天)", "頭七 (第 7 天)", "百日 (第 100 天)", "對年 (隔年農曆同日)"],
+            "國曆日期": [
+                p_dt.strftime('%Y-%m-%d'),
+                t7_dt.strftime('%Y-%m-%d'),
+                b100_dt.strftime('%Y-%m-%d'),
+                dn_dt_display
+            ],
+            "星期": [
+                week_names[p_dt.weekday()],
+                week_names[t7_dt.weekday()],
+                week_names[b100_dt.weekday()],
+                dn_week_display
+            ],
+            "對應農曆": [
+                p_lunar,
+                t7_lunar,
+                b100_lunar,
+                dn_lunar_display
+            ]
+        }
+        
+        st.markdown("---")
+        st.subheader("📋 智能化祭祀日期推算結果表")
+        
+        # 顯示互動式表格
+        st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
+        
+        st.info(
+            "💡 備註：傳統民間習俗各地方可能因應性別、家族內規、是否有閏月"
+            "而有提早一天（如：切七、做百日）或調整對年日期的彈性做法。"
+            "以上提供之結果為內政部民俗標準之基本精確日期，僅供家族排程參考。"
+        )
