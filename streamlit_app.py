@@ -12,6 +12,20 @@ st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國通用版)")
 st.markdown("本系統已全面優化！不論輸入**西元曆**（如 2026-07-10）或**中華民國曆**（如 115-07-10、1150710），皆可自動識別並精準轉換。")
 
 # ==========================================
+# 🔮 智慧演算法：精準計算天干地支與生肖
+# ==========================================
+def get_ganzhi_zodiac(lunar_year):
+    stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+    branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+    zodiacs = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
+    
+    # 萬年曆干支公式基準
+    stem_idx = (lunar_year - 4) % 10
+    branch_idx = (lunar_year - 4) % 12
+    
+    return f"{stems[stem_idx]}{branches[branch_idx]}年 ({zodiacs[branch_idx]})"
+
+# ==========================================
 # 🧠 核心：西元/民國智慧識別過濾器
 # ==========================================
 def clean_and_parse_date(date_val):
@@ -69,7 +83,7 @@ def clean_and_parse_date(date_val):
 tab1, tab2 = st.tabs(["📌 單日萬能查詢", "📊 Excel 混合批次轉換"])
 
 # ==========================================
-# 📌 分頁一：單日萬能查詢 (已加入閏月智慧識別)
+# 📌 分頁一：單日萬能查詢
 # ==========================================
 with tab1:
     st.header("單日國曆轉農曆 (支援自由文字輸入)")
@@ -106,9 +120,12 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
-                # 🛠️ 核心改動：判斷是否為閏月
+                # 處理閏月前綴
                 leap_prefix = "閏 " if lunar.is_leap else ""
                 lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+                
+                # 使用我們寫好的安全公式計算生肖與干支
+                ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
                 
                 st.markdown("---")
                 st.subheader("🔮 查詢對照結果：")
@@ -119,19 +136,19 @@ with tab1:
                 with c2:
                     st.metric(label="對應中華民國曆", value=f"民國 {minguo_year} 年")
                 with c3:
-                    # 這裡會正確顯示「閏 X 月 X 日」或「X 月 X 日」
                     st.metric(label="計算後農曆", value=lunar_display)
                 with c4:
-                    st.metric(label="歲次干支 (生肖)", value=lunar.chinese().split()[1])
+                    st.metric(label="歲次干支 (生肖)", value=ganzhi_display)
                     
-                st.success(f"💡 完整農曆資訊：{lunar.chinese()}")
+                st.success(f"💡 完整農曆中文表示：{lunar.chinese()}")
             except Exception as e:
-                st.error("❌ 經解析後的年份超出農曆計算範圍 (必須在西元 1900~2100 年之間)！")
+                # 🛠️ 這裡修改：精準回報錯誤原因，不再盲目瞎猜
+                st.error(f"❌ 轉換時發生錯誤！錯誤訊息: {e}。請確認輸入年份是否在西元 1900~2100 年之間。")
         else:
             st.warning("⚠️ 無法識別此日期格式，請重新輸入（例如：115/7/10 或 2026/7/10）")
 
 # ==========================================
-# 📊 分頁二：Excel 混合批次轉換 (已同步加入閏月識別)
+# 📊 分頁二：Excel 混合批次轉換
 # ==========================================
 with tab2:
     st.header("Excel 欄位混雜轉換器")
@@ -157,15 +174,13 @@ with tab2:
                             try:
                                 mingo = f"民國 {dt.year - 1911} 年"
                                 lunar_obj = ZhDate.from_datetime(dt)
-                                
-                                # 🛠️ 批次轉換也同步加入閏月判斷
                                 leap_prefix = "閏" if lunar_obj.is_leap else ""
                                 
                                 return pd.Series([
                                     dt.strftime('%Y-%m-%d'),
                                     mingo,
                                     f"農曆{leap_prefix}{lunar_obj.lunar_month}月{lunar_obj.lunar_day}日",
-                                    lunar_obj.chinese().split()[1]
+                                    get_ganzhi_zodiac(lunar_obj.lunar_year)
                                 ])
                             except:
                                 return pd.Series(["超出計算範圍", "無法計算", "無法計算", "無法計算"])
@@ -174,20 +189,4 @@ with tab2:
                     
                     df[['標準西元', '標準民國', '轉換農曆', '歲次干支(生肖)']] = df[date_col].apply(batch_convert)
                     
-                    st.success("🎉 東西全算好了！民國和西元都幫你整理得整整齊齊！")
-                    st.dataframe(df.head(10))
-                    
-                    output = io.BytesIO()
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                        df.to_excel(writer, index=False, sheet_name='智慧萬年曆結果')
-                    processed_data = output.getvalue()
-                    
-                    st.download_button(
-                        label="📥 下載轉換後的通用萬年曆 Excel",
-                        data=processed_data,
-                        file_name=f"通用萬年曆轉換結果_{datetime.now().strftime('%m%d_%H%M')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                    
-        except Exception as e:
-            st.error(f"💥 處理檔案時發生預期外的錯誤: {e}")
+                    st.success("🎉 東西全算好了！民國和西元都幫你整理得整
