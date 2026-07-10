@@ -12,16 +12,15 @@ st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國通用版)")
 st.markdown("本系統已全面優化！不論輸入**西元曆**（如 2026-07-10）或**中華民國曆**（如 115-07-10、1150710），皆可自動識別並精準轉換。")
 
 # ==========================================
-# 🧠 核心：西元/民國智慧識別過濾器 (已修正型態相容問題)
+# 🧠 核心：西元/民國智慧識別過濾器
 # ==========================================
 def clean_and_parse_date(date_val):
     if pd.isna(date_val):
         return None
     
-    # 狀況 1：如果是 Python 的日期或時間物件 (datetime, date, 或 Timestamp)
+    # 狀況 1：如果是 Python 的日期或時間物件
     if isinstance(date_val, (datetime, date, pd.Timestamp)):
         y, m, d = date_val.year, date_val.month, date_val.day
-        # 有時候系統或 Excel 把民國 115 年誤認成西元 0115 年，在這邊校正
         if y < 1900:
             y += 1911
         try:
@@ -29,11 +28,11 @@ def clean_and_parse_date(date_val):
         except:
             return None
     
-    # 狀況 2：如果是純數字 (例如 Excel 裡的 1150710)
+    # 狀況 2：如果是純數字
     if isinstance(date_val, (int, float)):
         date_val = str(int(date_val))
         
-    # 狀況 3：如果是字串 (各種手打格式)
+    # 狀況 3：如果是字串
     if isinstance(date_val, str):
         text = date_val.strip()
         text = text.replace("民國", "").replace("西元", "").replace("Minguo", "")
@@ -53,11 +52,11 @@ def clean_and_parse_date(date_val):
         elif len(nums) == 1 and len(nums[0]) in [6, 7, 8]:
             s = nums[0]
             try:
-                if len(s) == 7:    # 民國 3 位數: 1150710
+                if len(s) == 7:    
                     return datetime(int(s[:3]) + 1911, int(s[3:5]), int(s[5:]) or 1)
-                elif len(s) == 6:  # 民國 2 位數: 990710
+                elif len(s) == 6:  
                     return datetime(int(s[:2]) + 1911, int(s[2:4]), int(s[4:]) or 1)
-                elif len(s) == 8:  # 西元 4 位數: 20260710
+                elif len(s) == 8:  
                     return datetime(int(s[:4]), int(s[4:6]), int(s[6:]) or 1)
             except:
                 return None
@@ -70,7 +69,7 @@ def clean_and_parse_date(date_val):
 tab1, tab2 = st.tabs(["📌 單日萬能查詢", "📊 Excel 混合批次轉換"])
 
 # ==========================================
-# 📌 分頁一：單日萬能查詢
+# 📌 分頁一：單日萬能查詢 (已加入閏月智慧識別)
 # ==========================================
 with tab1:
     st.header("單日國曆轉農曆 (支援自由文字輸入)")
@@ -107,6 +106,10 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
+                # 🛠️ 核心改動：判斷是否為閏月
+                leap_prefix = "閏 " if lunar.is_leap else ""
+                lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+                
                 st.markdown("---")
                 st.subheader("🔮 查詢對照結果：")
                 
@@ -116,7 +119,8 @@ with tab1:
                 with c2:
                     st.metric(label="對應中華民國曆", value=f"民國 {minguo_year} 年")
                 with c3:
-                    st.metric(label="計算後農曆", value=f"{lunar.lunar_month}月{lunar.lunar_day}日")
+                    # 這裡會正確顯示「閏 X 月 X 日」或「X 月 X 日」
+                    st.metric(label="計算後農曆", value=lunar_display)
                 with c4:
                     st.metric(label="歲次干支 (生肖)", value=lunar.chinese().split()[1])
                     
@@ -127,7 +131,7 @@ with tab1:
             st.warning("⚠️ 無法識別此日期格式，請重新輸入（例如：115/7/10 或 2026/7/10）")
 
 # ==========================================
-# 📊 分頁二：Excel 混合批次轉換
+# 📊 分頁二：Excel 混合批次轉換 (已同步加入閏月識別)
 # ==========================================
 with tab2:
     st.header("Excel 欄位混雜轉換器")
@@ -153,10 +157,14 @@ with tab2:
                             try:
                                 mingo = f"民國 {dt.year - 1911} 年"
                                 lunar_obj = ZhDate.from_datetime(dt)
+                                
+                                # 🛠️ 批次轉換也同步加入閏月判斷
+                                leap_prefix = "閏" if lunar_obj.is_leap else ""
+                                
                                 return pd.Series([
                                     dt.strftime('%Y-%m-%d'),
                                     mingo,
-                                    f"農曆{lunar_obj.lunar_month}月{lunar_obj.lunar_day}日",
+                                    f"農曆{leap_prefix}{lunar_obj.lunar_month}月{lunar_obj.lunar_day}日",
                                     lunar_obj.chinese().split()[1]
                                 ])
                             except:
