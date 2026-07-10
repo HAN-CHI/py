@@ -230,26 +230,21 @@ with tab3:
     st.header("🕯️ 傳統祭祀時間計算機")
     st.markdown("傳統習俗中，**往生當天即算作「第 1 天」**。本計算機依此基準精確推算。")
     
-    # 🛠️ 調整：改用一個獨立的臨時輸入變數，預設一樣帶入全域最新日期
+    # 臨時輸入變數，預設帶入全域最新日期
     death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'])
     
-    # 🛠️ 新增：使用者要求的專屬計算按鈕
+    # 專屬計算按鈕
     click_calc = st.button("🚀 執行祭祀日期推算", use_container_width=True)
     
-    # 当點擊按鈕時，才正式把臨時輸入的日期寫入全域狀態變數
     if click_calc:
         st.session_state['latest_date'] = death_date_input
         
-    # 核心計算一律向「全域最新狀態」看齊
     final_calc_date = st.session_state['latest_date']
     
     if final_calc_date:
         p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
-        
-        # 建立星期對照表
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         
-        # 輔助函式：取得農曆顯示字串
         def get_lunar_str(dt_obj):
             try:
                 l = ZhDate.from_datetime(dt_obj)
@@ -261,15 +256,19 @@ with tab3:
         # 1. 往生當天 (第 1 天)
         p_lunar = get_lunar_str(p_dt)
         
-        # 2. 頭七 (第 7 天) -> 往生 + 6 天
+        # 2. 🛠️ 新增：頭七儀式舉辦日 (第 6 天深夜) -> 往生 + 5 天
+        t6_dt = p_dt + timedelta(days=5)
+        t6_lunar = get_lunar_str(t6_dt)
+        
+        # 3. 頭七正日 (第 7 天) -> 往生 + 6 天
         t7_dt = p_dt + timedelta(days=6)
         t7_lunar = get_lunar_str(t7_dt)
         
-        # 3. 百日 (第 100 天) -> 往生 + 99 天
+        # 4. 百日 (第 100 天) -> 往生 + 99 天
         b100_dt = p_dt + timedelta(days=99)
         b100_lunar = get_lunar_str(b100_dt)
         
-        # 4. 對年 (隔年農曆同月同日)
+        # 5. 對年 (隔年農曆同月同日)
         dn_dt_display = "無法計算"
         dn_lunar_display = "無法計算"
         dn_week_display = "無法計算"
@@ -279,15 +278,12 @@ with tab3:
             dn_m = lunar_now.lunar_month
             dn_d = lunar_now.lunar_day
             
-            # 防錯滾動機制
             for offset in range(5):
                 try:
                     test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
                     test_dt = test_lunar.to_datetime()
-                    
                     dn_dt_display = test_dt.strftime('%Y-%m-%d')
                     dn_week_display = week_names[test_dt.weekday()]
-                    
                     lp = "閏" if test_lunar.leap_month else ""
                     dn_lunar_display = f"農曆 {lp}{test_lunar.lunar_month}月{test_lunar.lunar_day}日"
                     break
@@ -296,37 +292,55 @@ with tab3:
         except:
             pass
             
-        # 彙整成表格資料
+        # 🛠️ 重新設計彙整表格資料，融入時辰觀念
         calc_data = {
-            "祭祀項目": ["往生當天 (第 1 天)", "頭七 (第 7 天)", "百日 (第 100 天)", "對年 (隔年農曆同日)"],
+            "祭祀項目": [
+                "往生當天 (第 1 天)", 
+                "🕯️ 頭七儀式 (第 6 天深夜)", 
+                "頭七正日 (第 7 天)", 
+                "百日 (第 100 天)", 
+                "對年 (隔年農曆同日)"
+            ],
             "國曆日期": [
                 p_dt.strftime('%Y-%m-%d'),
+                f"★ {t6_dt.strftime('%Y-%m-%d')}",
                 t7_dt.strftime('%Y-%m-%d'),
                 b100_dt.strftime('%Y-%m-%d'),
                 dn_dt_display
             ],
             "星期": [
                 week_names[p_dt.weekday()],
+                week_names[t6_dt.weekday()],
                 week_names[t7_dt.weekday()],
                 week_names[b100_dt.weekday()],
                 dn_week_display
             ],
             "對應農曆": [
                 p_lunar,
+                t6_lunar,
                 t7_lunar,
                 b100_lunar,
                 dn_lunar_display
+            ],
+            "建議時程 / 備註": [
+                "家屬守靈安靈",
+                "⏱️ 21:00 開始準備，23:00~01:00 (子時) 完成儀式交子",
+                "頭七當天，民俗上亡靈會在此日返家探視",
+                "卒後百日祭祀，各地方可能略有提早",
+                "隔年逝世週年祭禮（逢小月已由系統完成自動防錯滾動）"
             ]
         }
         
         st.markdown("---")
-        st.subheader("📋 智能化祭祀日期推算結果表")
+        st.subheader("📋 智能化祭祀日期與儀式推算結果表")
         
         # 顯示互動式表格
         st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
         
+        # 🛠️ 資訊卡強化：將您提供的珍貴文化細節做為高亮提醒
         st.info(
-            "💡 備註：傳統民間習俗各地方可能因應性別、家族內規、是否有閏月"
-            "而有提早一天或調整對年日期的彈性做法。"
-            "以上提供之結果為內政部民俗標準之基本精確日期，僅供家族排程參考。"
+            "💡 **傳統時間觀與「交子時」提醒：**\n\n"
+            "古代以「子時」（23:00 - 01:00）視為新一天的開始。因此，頭七儀式按傳統習俗會安排在**第六天的晚上 21:00 左右開始**，"
+            "並於深夜 23:00 或 23:15（即第七天子時的第一個時辰，俗稱交子時）進行誦經與完成儀式。這不僅代表家屬最誠摯的守候與祝福，"
+            "也能確保在第七天剛好開始之際向亡者送上衷心迴向。"
         )
