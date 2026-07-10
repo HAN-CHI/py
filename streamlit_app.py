@@ -244,21 +244,23 @@ with tab2:
 with tab3:
     st.header("🦁 生肖與晉塔適宜方位查詢")
     search_date = clean_and_parse_date(st.text_input("輸入日期 (如 115/3/22):", value=f"{st.session_state['latest_date'].year-1911}/{st.session_state['latest_date'].strftime('%m/%d')}"))
+    
     if search_date:
-        lunar = ZhDate.from_datetime(search_date)
-        _, zodiac = get_ganzhi_zodiac_details(lunar.lunar_year)
-        st.subheader(f"🔮 【{zodiac}】生肖專屬解析")
-        # 顯示解析表格 (省略中間部分邏輯)...
-        
-        st.markdown("---")
-        st.subheader("📜 民俗堪輿對照表 (固定參考)")
-        with st.expander("點擊展開：查看生肖方位與煞方對照表"):
-            st.markdown("### 1. 生肖方位對照")
-            st.table(pd.DataFrame({"生肖": ["鼠/龍/猴", "牛/蛇/雞", "虎/馬/狗", "兔/羊/豬"], "大吉方": ["西", "南", "東", "北"], "煞方": ["南", "東", "北", "西"]}))
-            st.markdown("### 2. 農曆月份【月煞】")
-            st.table(pd.DataFrame({"農曆月份": ["1/5/9", "2/6/10", "3/7/11", "4/8/12"], "不宜座向": ["北方", "西方", "南方", "東方"]}))
-            st.markdown("### 3. 【年煞】方位對照")
-            st.table(pd.DataFrame({"地支": ["寅午戌", "申子辰", "亥卯未", "巳酉丑"], "煞方": ["北方", "南方", "西方", "東方"]}))
+        try:
+            lunar = ZhDate.from_datetime(search_date)
+            _, zodiac = get_ganzhi_zodiac_details(lunar.lunar_year)
+            st.subheader(f"🔮 【{zodiac}】生肖專屬解析")
             
-except Exception as e:
-            st.error(f"❌ 處理失敗，請確認年份是否在 1900~2100 之間（錯誤原因: {e}）")
+            # (這裡可以放你原本想顯示的生肖邏輯)
+            
+            st.markdown("---")
+            st.subheader("📜 民俗堪輿對照表 (固定參考)")
+            with st.expander("點擊展開：查看生肖方位與煞方對照表"):
+                st.markdown("### 1. 生肖方位對照")
+                st.table(pd.DataFrame({"生肖": ["鼠/龍/猴", "牛/蛇/雞", "虎/馬/狗", "兔/羊/豬"], "大吉方": ["西", "南", "東", "北"], "煞方": ["南", "東", "北", "西"]}))
+                st.markdown("### 2. 農曆月份【月煞】")
+                st.table(pd.DataFrame({"農曆月份": ["1/5/9", "2/6/10", "3/7/11", "4/8/12"], "不宜座向": ["北方", "西方", "南方", "東方"]}))
+                st.markdown("### 3. 【年煞】方位對照")
+                st.table(pd.DataFrame({"地支": ["寅午戌", "申子辰", "亥卯未", "巳酉丑"], "煞方": ["北方", "南方", "西方", "東方"]}))
+        except Exception as e:
+            st.error(f"❌ 處理失敗，請確認輸入格式是否正確 (錯誤原因: {e})")
