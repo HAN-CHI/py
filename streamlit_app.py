@@ -16,16 +16,16 @@ st.set_page_config(
 if 'latest_date' not in st.session_state:
     st.session_state['latest_date'] = date.today()
 
-st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀通用版)")
+st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀/塔位通用版)")
 st.markdown(
     "本系統支援西元曆、中華民國曆自動識別轉換，"
-    "並內建傳統民俗頭七、百日、對年之精準祭祀時間計算。"
+    "內建傳統民俗頭七、百日、對年之精準祭祀時間計算，並新增生肖專屬塔位適宜方位查詢。"
 )
 
 # ==========================================
 # 🔮 智慧演算法：精準計算天干地支與生肖
 # ==========================================
-def get_ganzhi_zodiac(lunar_year):
+def get_ganzhi_zodiac_details(lunar_year):
     stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
     branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
     zodiacs = ["鼠", "牛", "虎", "兔", "龍", "蛇", "馬", "羊", "猴", "雞", "狗", "豬"]
@@ -33,7 +33,34 @@ def get_ganzhi_zodiac(lunar_year):
     stem_idx = (lunar_year - 4) % 10
     branch_idx = (lunar_year - 4) % 12
     
-    return f"{stems[stem_idx]}{branches[branch_idx]}年 ({zodiacs[branch_idx]})"
+    gz = f"{stems[stem_idx]}{branches[branch_idx]}"
+    zd = zodiacs[branch_idx]
+    return gz, zd
+
+def get_ganzhi_zodiac(lunar_year):
+    gz, zd = get_ganzhi_zodiac_details(lunar_year)
+    return f"{gz}年 ({zd})"
+
+# ==========================================
+# 🧭 風水地理：生肖對應塔位適宜方位資料庫
+# ==========================================
+def get_tower_orientation(zodiac):
+    # 依據傳統民俗三合、八宅派生肖坐向五行推補
+    data = {
+        "鼠": {"吉方": "坐正北朝正南、坐正東朝正西", "次吉": "坐正西朝正東", "煞方": "忌坐正南朝正北（相沖）"},
+        "牛": {"吉方": "坐北朝南、坐西朝東", "次吉": "坐東南朝西北", "煞方": "忌坐西南朝東北（相沖）"},
+        "虎": {"吉方": "坐東朝西、坐南朝北", "次吉": "坐西北朝東南", "煞方": "忌坐正西朝正東（相沖）"},
+        "兔": {"吉方": "坐正東朝正西、坐正北朝正南", "次吉": "坐正南朝正北", "煞方": "忌坐正西朝正東（相沖）"},
+        "龍": {"吉方": "坐東朝西、坐北朝南", "次吉": "坐西朝東", "煞方": "忌坐西北朝東南（相沖）"},
+        "蛇": {"吉方": "坐南朝北、坐西朝東", "次吉": "坐東北朝西南", "煞方": "忌坐西北朝東南（相沖）"},
+        "馬": {"吉方": "坐正南朝正北、坐正西朝正東", "次吉": "坐正東朝正西", "煞方": "忌坐正北朝正南（相沖）"},
+        "羊": {"吉方": "坐南朝北、坐東朝西", "次吉": "坐西北朝東南", "煞方": "忌坐東北朝西南（相沖）"},
+        "猴": {"吉方": "坐西朝東、坐北朝南", "次吉": "坐東南朝西北", "煞方": "忌坐正東朝正西（相沖）"},
+        "雞": {"吉方": "坐正西朝正東、坐正南朝正北", "次吉": "坐東南朝西北", "煞方": "忌坐正東朝正西（相沖）"},
+        "狗": {"吉方": "坐西朝東、坐南朝北", "次吉": "坐東北朝西南", "煞方": "忌坐東南朝西北（相沖）"},
+        "豬": {"吉方": "坐北朝南、坐東朝西", "次吉": "坐西南朝東北", "煞方": "忌坐正北朝正南（相沖）"}
+    }
+    return data.get(zodiac, {"吉方": "通用方位", "次吉": "通用方位", "煞方": "無特殊禁忌"})
 
 # ==========================================
 # 🧠 核心：西元/民國智慧識別過濾器
@@ -85,12 +112,13 @@ def clean_and_parse_date(date_val):
     return None
 
 # ==========================================
-# 建立網頁分頁
+# 建立網頁分頁 (新增第四個分頁)
 # ==========================================
-tab1, tab2, tab3 = st.tabs([
+tab1, tab2, tab3, tab4 = st.tabs([
     "📌 單日萬能查詢", 
     "📊 Excel 混合批次轉換", 
-    "🕯️ 頭七/百日/對年計算機"
+    "🕯️ 頭七/百日/對年計算機",
+    "🦁 生肖與塔位吉方查詢"
 ])
 
 # ==========================================
@@ -107,8 +135,8 @@ with tab1:
     
     with col_input1:
         st.subheader("📍 方法 A")
-        date_picker = st.date_input("用日曆選單選擇日期：", st.session_state['latest_date'])
-        click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True)
+        date_picker = st.date_input("用日曆選單選擇日期：", st.session_state['latest_date'], key="tab1_dp")
+        click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a")
         if click_a:
             target_date = clean_and_parse_date(date_picker)
             if target_date:
@@ -122,9 +150,10 @@ with tab1:
         date_text = st.text_input(
             "直接打字輸入（西元/民國皆可）：", 
             value=current_minguo_str, 
-            help="範例: 115/7/10 或 2026-07-10"
+            help="範例: 115/7/10 或 2026-07-10",
+            key="tab1_ti"
         )
-        click_b = st.button("🚀 執行方法 B 查詢", use_container_width=True)
+        click_b = st.button("🚀 執行方法 B 查詢", use_container_width=True, key="tab1_btn_b")
         if click_b:
             target_date = clean_and_parse_date(date_text)
             if target_date:
@@ -169,7 +198,8 @@ with tab2:
     
     uploaded_file = st.file_uploader(
         "請選擇要上傳的 Excel 檔案 (.xlsx, .xls)", 
-        type=["xlsx", "xls"]
+        type=["xlsx", "xls"],
+        key="tab2_uploader"
     )
     
     if uploaded_file is not None:
@@ -179,9 +209,9 @@ with tab2:
             st.dataframe(df.head(5))
             
             columns = df.columns.tolist()
-            date_col = st.selectbox("請選擇包含『國曆日期欄位』的名稱：", columns)
+            date_col = st.selectbox("請選擇包含『國曆日期欄位』的名稱：", columns, key="tab2_select")
             
-            if st.button("🚀 開始智慧識別並批次轉換"):
+            if st.button("🚀 開始智慧識別並批次轉換", key="tab2_run"):
                 with st.spinner('AI 引擎正在識別格式...'):
                     
                     def batch_convert(row_val):
@@ -217,7 +247,8 @@ with tab2:
                         label="📥 下載轉換後的通用萬年曆 Excel",
                         data=processed_data,
                         file_name=f"萬年曆轉換結果_{datetime.now().strftime('%m%d_%H%M')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="tab2_download"
                     )
                     
         except Exception as e:
@@ -233,7 +264,7 @@ with tab3:
     col_l, col_r = st.columns([2, 1])
     
     with col_l:
-        death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'])
+        death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'], key="tab3_dp")
     
     # 🧠 核心演算法：智慧型「全域跨閏月動態掃描引擎」
     has_cross_leap = False
@@ -245,13 +276,11 @@ with tab3:
     except:
         lunar_now = None
         
-    # 往後自動連續掃描 350 天，確認家屬守喪期間是否有插進去任何一個「非本月」的閏月
     if lunar_now:
         for day_offset in range(1, 350):
             scan_dt = p_dt + timedelta(days=day_offset)
             try:
                 scan_lunar = ZhDate.from_datetime(scan_dt)
-                # 排除往生當下就已經在該閏月的情況，只抓中間「新跨入」的閏月
                 if scan_lunar.leap_month and (not lunar_now.leap_month or scan_lunar.lunar_month != lunar_now.lunar_month):
                     has_cross_leap = True
                     detected_leap_name = f"閏 {scan_lunar.lunar_month} 月"
@@ -260,15 +289,13 @@ with tab3:
                 continue
             
     with col_r:
-        # 💡 自動提示精算機制狀態，對年一律固定約 355 天
         if has_cross_leap:
             st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
             st.info("💡 依「死人無閏月」傳統，系統已自動將對年月份提前一個月（對日作），確保對年相隔時間總計為 354 天（含起始日為 355 天）。")
         else:
-            st.info("💡")
+            st.info("💡 守喪期間無跨閏月，對年依常規對齊隔年農曆同月同日辦理，相隔時間總計為 354 天（含起始日為 355 天）。")
 
-    # 專屬計算按鈕
-    click_calc = st.button("🚀 執行祭祀日期推算", use_container_width=True)
+    click_calc = st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run")
     
     if click_calc:
         st.session_state['latest_date'] = death_date_input
@@ -279,7 +306,6 @@ with tab3:
         p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         
-        # 🛠️ 統一的農曆格式化函數，確保自動帶入「閏」字
         def get_lunar_str(dt_obj):
             try:
                 l = ZhDate.from_datetime(dt_obj)
@@ -296,7 +322,6 @@ with tab3:
         b100_dt = p_dt + timedelta(days=99)
         b100_lunar = get_lunar_str(b100_dt)
         
-        # ⚙️ 對年核心演算法 (融入固定對年相隔 354 天 / 含起始日 355 天之邏輯)
         dn_dt_display = "無法計算"
         dn_lunar_display = "無法計算"
         dn_week_display = "無法計算"
@@ -304,7 +329,6 @@ with tab3:
         
         if lunar_now:
             try:
-                # 狀況 1：如果守喪期內有「跨閏月」的情況 -> 月份自動減 1 (提前一個月)，日子不變 (對日作)
                 if has_cross_leap:
                     dn_y = lunar_now.lunar_year + 1
                     dn_m = lunar_now.lunar_month - 1
@@ -324,7 +348,6 @@ with tab3:
                             continue
                     dn_remark = "⚠️ 守喪期逢跨閏月，依俗自動提前一個月辦理（對日作）。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
                 
-                # 狀況 2：往生當月本身就是閏月 -> 直接對齊隔年同一個號碼的正常月份
                 elif lunar_now.leap_month:
                     dn_y = lunar_now.lunar_year + 1
                     dn_m = lunar_now.lunar_month 
@@ -340,7 +363,6 @@ with tab3:
                             continue
                     dn_remark = "⚠️ 往生當月為閏月，依俗自動對齊隔年正月同日辦理。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
                 
-                # 狀況 3：常規無閏月年度 -> 直接對齊隔年同月同日
                 else:
                     dn_y = lunar_now.lunar_year + 1
                     dn_m = lunar_now.lunar_month
@@ -356,54 +378,20 @@ with tab3:
                             continue
                     dn_remark = "依常規對齊隔年農曆同月同日辦理。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
                     
-                # 補上星期與動態國曆差距驗證
                 if dn_dt_display != "無法計算":
                     parsed_dn_dt = datetime.strptime(dn_dt_display, '%Y-%m-%d')
                     dn_week_display = week_names[parsed_dn_dt.weekday()]
-                    
-                    # 計算此案實際之國曆天數差距
                     days_diff = (parsed_dn_dt.date() - p_dt.date()).days
                     dn_remark += f"（本案實際國曆相隔：{days_diff} 天，含起始日：{days_diff + 1} 天）"
             except:
                 pass
             
-        # 彙整表格資料
         calc_data = {
-            "祭祀項目": [
-                "往生當天 (第 1 天)", 
-                "🕯️ 頭七儀式 (第 6 天深夜)", 
-                "頭七正日 (第 7 天)", 
-                "百日 (第 100 天)", 
-                "對年 (周年紀念)"
-            ],
-            "國曆日期": [
-                p_dt.strftime('%Y-%m-%d'),
-                f"★ {t6_dt.strftime('%Y-%m-%d')}",
-                t7_dt.strftime('%Y-%m-%d'),
-                b100_dt.strftime('%Y-%m-%d'),
-                dn_dt_display
-            ],
-            "星期": [
-                week_names[p_dt.weekday()],
-                week_names[t6_dt.weekday()],
-                week_names[t7_dt.weekday()],
-                week_names[b100_dt.weekday()],
-                dn_week_display
-            ],
-            "對應農曆": [
-                p_lunar,
-                t6_lunar,
-                t7_lunar,
-                b100_lunar,
-                dn_lunar_display
-            ],
-            "建議時程 / 備註": [
-                "家屬守靈安靈",
-                "⏱️ 21:00 開始準備，23:00~01:00 (子時) 完成儀式交子",
-                "頭七當天，民俗上亡靈會在此日返家探視",
-                "卒後百日祭祀，各地方可能略有提早",
-                dn_remark
-            ]
+            "祭祀項目": ["往生當天 (第 1 天)", "🕯️ 頭七儀式 (第 6 天深夜)", "頭七正日 (第 7 天)", "百日 (第 100 天)", "對年 (周年紀念)"],
+            "國曆日期": [p_dt.strftime('%Y-%m-%d'), f"★ {t6_dt.strftime('%Y-%m-%d')}", t7_dt.strftime('%Y-%m-%d'), b100_dt.strftime('%Y-%m-%d'), dn_dt_display],
+            "星期": [week_names[p_dt.weekday()], week_names[t6_dt.weekday()], week_names[t7_dt.weekday()], week_names[b100_dt.weekday()], dn_week_display],
+            "對應農曆": [p_lunar, t6_lunar, t7_lunar, b100_lunar, dn_lunar_display],
+            "建議時程 / 備註": ["家屬守靈安靈", "⏱️ 21:00 開始準備，23:00~01:00 (子時) 完成儀式交子", "頭七當天，民俗上亡靈會在此日返家探視", "卒後百日祭祀，各地方可能略有提早", dn_remark]
         }
         
         st.markdown("---")
@@ -411,5 +399,5 @@ with tab3:
         st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
         
         st.info(
-            "💡"
-        )
+            "💡 **民俗小常識：對年固定 12 個農曆月原則**\n\n"
+            "當往生日至隔年對年的週期中遭遇「閏月」時，活人的曆法會經歷 13 個農曆月（約
