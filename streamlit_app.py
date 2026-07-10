@@ -256,7 +256,7 @@ with tab3:
         # 1. 往生當天 (第 1 天)
         p_lunar = get_lunar_str(p_dt)
         
-        # 2. 🛠️ 新增：頭七儀式舉辦日 (第 6 天深夜) -> 往生 + 5 天
+        # 2. 頭七儀式舉辦日 (第 6 天深夜) -> 往生 + 5 天
         t6_dt = p_dt + timedelta(days=5)
         t6_lunar = get_lunar_str(t6_dt)
         
@@ -268,31 +268,46 @@ with tab3:
         b100_dt = p_dt + timedelta(days=99)
         b100_lunar = get_lunar_str(b100_dt)
         
-        # 5. 對年 (隔年農曆同月同日)
+        # 5. ⚙️ 對年核心演算法 (嚴格落實「死人無閏月」)
         dn_dt_display = "無法計算"
         dn_lunar_display = "無法計算"
         dn_week_display = "無法計算"
+        is_death_leap = False  # 標記往生當月是否為閏月
+        
         try:
             lunar_now = ZhDate.from_datetime(p_dt)
+            is_death_leap = lunar_now.leap_month
+            
+            # 鎖定隔年年份 (Y+1)
             dn_y = lunar_now.lunar_year + 1
-            dn_m = lunar_now.lunar_month
+            # 💡 核心：不論原本是否為閏幾月，dn_m 一律視為隔年的「正幾月」
+            dn_m = lunar_now.lunar_month 
             dn_d = lunar_now.lunar_day
             
+            # 防錯滾動機制 (處理隔年該農曆月沒有30號的大月問題)
             for offset in range(5):
                 try:
+                    # 此處不傳入 leap_month 參數，強迫系統尋找常規正月，徹底實踐「死人無閏月」
                     test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
                     test_dt = test_lunar.to_datetime()
+                    
                     dn_dt_display = test_dt.strftime('%Y-%m-%d')
                     dn_week_display = week_names[test_dt.weekday()]
-                    lp = "閏" if test_lunar.leap_month else ""
-                    dn_lunar_display = f"農曆 {lp}{test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                    
+                    dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
                     break
                 except:
                     continue
         except:
             pass
             
-        # 🛠️ 重新設計彙整表格資料，融入時辰觀念
+        # 💡 動態調整「對年」的 UI 備註文字
+        if is_death_leap:
+            dn_remark = f"⚠️此案依「死人無閏月」俗，已由原【閏 {lunar_now.lunar_month} 月】自動修正對齊隔年【正 {dn_m} 月】辦理"
+        else:
+            dn_remark = "依「對年對日作」原則完美對齊隔年同月同日（逢小月已由系統自動遞補防錯）"
+            
+        # 彙整表格資料
         calc_data = {
             "祭祀項目": [
                 "往生當天 (第 1 天)", 
@@ -327,7 +342,7 @@ with tab3:
                 "⏱️ 21:00 開始準備，23:00~01:00 (子時) 完成儀式交子",
                 "頭七當天，民俗上亡靈會在此日返家探視",
                 "卒後百日祭祀，各地方可能略有提早",
-                "隔年逝世週年祭禮（逢小月已由系統完成自動防錯滾動）"
+                dn_remark
             ]
         }
         
@@ -337,10 +352,10 @@ with tab3:
         # 顯示互動式表格
         st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
         
-        # 🛠️ 資訊卡強化：將您提供的珍貴文化細節做為高亮提醒
+        # 資訊卡強化：加入「死人無閏月」的文化知識補充
         st.info(
-            "💡 **傳統時間觀與「交子時」提醒：**\n\n"
-            "古代以「子時」（23:00 - 01:00）視為新一天的開始。因此，頭七儀式按傳統習俗會安排在**第六天的晚上 21:00 左右開始**，"
-            "並於深夜 23:00 或 23:15（即第七天子時的第一個時辰，俗稱交子時）進行誦經與完成儀式。這不僅代表家屬最誠摯的守候與祝福，"
-            "也能確保在第七天剛好開始之際向亡者送上衷心迴向。"
+            "💡 **民俗小常識：什麼是「對年對日作，死人無閏月」？**\n\n"
+            "1. **若往生當月正是閏月**：亡者世界是不過閏月的，因此系統會自動「扣除閏月」，將對年直接對應到隔年的**正月份**舉辦。\n"
+            "2. **若往生後的一年內適逢閏年曆法**：不論這一年之中多塞了哪一個閏月，對年絕對**不需要往後延一個月**。家屬只需按照原本往生的農曆月份與日子，在隔年直接對齊作祭拜即可。\n\n"
+            "*本系統已將上述邏輯完整內嵌至核心程式，請放心參考排程。*"
         )
