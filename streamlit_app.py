@@ -137,8 +137,8 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
-                leap_prefix = "閏 " if lunar.leap_month else ""
-                lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+                leap_prefix = "閏" if lunar.leap_month else ""
+                lunar_display = f"農曆 {leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
                 ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
                 
                 st.markdown("---")
@@ -275,6 +275,7 @@ with tab3:
         p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         
+        # 🛠️ 核心修正：封裝統一的農曆格式化函數，確保自動帶入「閏」字
         def get_lunar_str(dt_obj):
             try:
                 l = ZhDate.from_datetime(dt_obj)
@@ -316,7 +317,7 @@ with tab3:
                     test_lunar = ZhDate(dn_y, dn_m, dn_d)
                     test_dt = test_lunar.to_datetime()
                     dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                    dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                    dn_lunar_display = get_lunar_str(test_dt)  # 💡 修正：使用 get_lunar_str 確保帶有「閏」字
                     dn_remark = "⚠️本案適逢跨閏月，已依您指定之精算原則，自動提前一個月並修正日子辦理。"
                 else:
                     # 派別 B：提前一個月，對日作（6月16日 變 5月16日）
@@ -332,7 +333,7 @@ with tab3:
                             test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
                             test_dt = test_lunar.to_datetime()
                             dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                            dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                            dn_lunar_display = get_lunar_str(test_dt)  # 💡 修正：使用 get_lunar_str 確保帶有「閏」字
                             break
                         except:
                             continue
@@ -348,7 +349,7 @@ with tab3:
                         test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
                         test_dt = test_lunar.to_datetime()
                         dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                        dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                        dn_lunar_display = get_lunar_str(test_dt)  # 💡 修正：使用 get_lunar_str 確保帶有「閏」字
                         break
                     except:
                         continue
@@ -364,7 +365,7 @@ with tab3:
                         test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
                         test_dt = test_lunar.to_datetime()
                         dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                        dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
+                        dn_lunar_display = get_lunar_str(test_dt)  # 💡 修正：使用 get_lunar_str 確保帶有「閏」字
                         break
                     except:
                         continue
