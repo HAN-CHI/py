@@ -262,4 +262,3 @@ with tab3:
             
         except Exception as e:
             st.error(f"❌ 處理失敗，請確認年份是否在 1900~2100 之間（錯誤原因: {e}）")
-        
