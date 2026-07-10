@@ -150,8 +150,8 @@ with tab1:
             if st.button("🚀 執行方法 B 查詢", use_container_width=True, key="tab1_btn_b"):
                 target_date = clean_and_parse_date(date_text)
                 is_triggered = True
-
-else: # 農曆 ➔ 國曆
+            
+    else: # 農曆 ➔ 國曆
         st.subheader("📍 方法 C (農曆輸入)")
         
         # 預先計算當前的民國年份
