@@ -137,8 +137,8 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
-                leap_prefix = "閏 " if lunar.leap_month else ""
-                lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+                leap_prefix = "閏" if lunar.leap_month else ""
+                lunar_display = f"農曆 {leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
                 ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
                 
                 st.markdown("---")
@@ -230,9 +230,43 @@ with tab3:
     st.header("🕯️ 傳統祭祀時間計算機")
     st.markdown("傳統習俗中，**往生當天即算作「第 1 天」**。本計算機依此基準精確推算。")
     
-    # 臨時輸入變數，預設帶入全域最新日期
-    death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'])
+    col_l, col_r = st.columns([2, 1])
     
+    with col_l:
+        death_date_input = st.date_input("請選擇「國曆往生日期」：", st.session_state['latest_date'])
+    
+    # 🧠 核心演算法：智慧型「全域跨閏月動態掃描引擎」
+    has_cross_leap = False
+    detected_leap_name = ""
+    p_dt = datetime(death_date_input.year, death_date_input.month, death_date_input.day)
+    
+    try:
+        lunar_now = ZhDate.from_datetime(p_dt)
+    except:
+        lunar_now = None
+        
+    # 往後自動連續掃描 350 天，確認家屬守喪期間是否有插進去任何一個「非本月」的閏月
+    if lunar_now:
+        for day_offset in range(1, 350):
+            scan_dt = p_dt + timedelta(days=day_offset)
+            try:
+                scan_lunar = ZhDate.from_datetime(scan_dt)
+                # 排除往生當下就已經在該閏月的情況，只抓中間「新跨入」的閏月
+                if scan_lunar.leap_month and (not lunar_now.leap_month or scan_lunar.lunar_month != lunar_now.lunar_month):
+                    has_cross_leap = True
+                    detected_leap_name = f"閏 {scan_lunar.lunar_month} 月"
+                    break
+            except:
+                continue
+            
+    with col_r:
+        # 💡 自動提示精算機制狀態，對年一律固定約 355 天
+        if has_cross_leap:
+            st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
+            st.info("💡 依「死人無閏月」傳統，系統已自動將對年月份提前一個月（對日作），確保對年相隔時間總計為 354 天（含起始日為 355 天）。")
+        else:
+            st.info("💡")
+
     # 專屬計算按鈕
     click_calc = st.button("🚀 執行祭祀日期推算", use_container_width=True)
     
@@ -245,6 +279,7 @@ with tab3:
         p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         
+        # 🛠️ 統一的農曆格式化函數，確保自動帶入「閏」字
         def get_lunar_str(dt_obj):
             try:
                 l = ZhDate.from_datetime(dt_obj)
@@ -253,59 +288,84 @@ with tab3:
             except:
                 return "無法計算"
                 
-        # 1. 往生當天 (第 1 天)
         p_lunar = get_lunar_str(p_dt)
-        
-        # 2. 頭七儀式舉辦日 (第 6 天深夜) -> 往生 + 5 天
         t6_dt = p_dt + timedelta(days=5)
         t6_lunar = get_lunar_str(t6_dt)
-        
-        # 3. 頭七正日 (第 7 天) -> 往生 + 6 天
         t7_dt = p_dt + timedelta(days=6)
         t7_lunar = get_lunar_str(t7_dt)
-        
-        # 4. 百日 (第 100 天) -> 往生 + 99 天
         b100_dt = p_dt + timedelta(days=99)
         b100_lunar = get_lunar_str(b100_dt)
         
-        # 5. ⚙️ 對年核心演算法 (嚴格落實「死人無閏月」)
+        # ⚙️ 對年核心演算法 (融入固定對年相隔 354 天 / 含起始日 355 天之邏輯)
         dn_dt_display = "無法計算"
         dn_lunar_display = "無法計算"
         dn_week_display = "無法計算"
-        is_death_leap = False  # 標記往生當月是否為閏月
+        dn_remark = ""
         
-        try:
-            lunar_now = ZhDate.from_datetime(p_dt)
-            is_death_leap = lunar_now.leap_month
-            
-            # 鎖定隔年年份 (Y+1)
-            dn_y = lunar_now.lunar_year + 1
-            # 💡 核心：不論原本是否為閏幾月，dn_m 一律視為隔年的「正幾月」
-            dn_m = lunar_now.lunar_month 
-            dn_d = lunar_now.lunar_day
-            
-            # 防錯滾動機制 (處理隔年該農曆月沒有30號的大月問題)
-            for offset in range(5):
-                try:
-                    # 此處不傳入 leap_month 參數，強迫系統尋找常規正月，徹底實踐「死人無閏月」
-                    test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
-                    test_dt = test_lunar.to_datetime()
+        if lunar_now:
+            try:
+                # 狀況 1：如果守喪期內有「跨閏月」的情況 -> 月份自動減 1 (提前一個月)，日子不變 (對日作)
+                if has_cross_leap:
+                    dn_y = lunar_now.lunar_year + 1
+                    dn_m = lunar_now.lunar_month - 1
+                    if dn_m == 0:
+                        dn_m = 12
+                        dn_y -= 1
+                    dn_d = lunar_now.lunar_day
                     
-                    dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                    dn_week_display = week_names[test_dt.weekday()]
+                    for offset in range(5):
+                        try:
+                            test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
+                            test_dt = test_lunar.to_datetime()
+                            dn_dt_display = test_dt.strftime('%Y-%m-%d')
+                            dn_lunar_display = get_lunar_str(test_dt)
+                            break
+                        except:
+                            continue
+                    dn_remark = "⚠️ 守喪期逢跨閏月，依俗自動提前一個月辦理（對日作）。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
+                
+                # 狀況 2：往生當月本身就是閏月 -> 直接對齊隔年同一個號碼的正常月份
+                elif lunar_now.leap_month:
+                    dn_y = lunar_now.lunar_year + 1
+                    dn_m = lunar_now.lunar_month 
+                    dn_d = lunar_now.lunar_day
+                    for offset in range(5):
+                        try:
+                            test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
+                            test_dt = test_lunar.to_datetime()
+                            dn_dt_display = test_dt.strftime('%Y-%m-%d')
+                            dn_lunar_display = get_lunar_str(test_dt)
+                            break
+                        except:
+                            continue
+                    dn_remark = "⚠️ 往生當月為閏月，依俗自動對齊隔年正月同日辦理。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
+                
+                # 狀況 3：常規無閏月年度 -> 直接對齊隔年同月同日
+                else:
+                    dn_y = lunar_now.lunar_year + 1
+                    dn_m = lunar_now.lunar_month
+                    dn_d = lunar_now.lunar_day
+                    for offset in range(5):
+                        try:
+                            test_lunar = ZhDate(dn_y, dn_m, dn_d - offset)
+                            test_dt = test_lunar.to_datetime()
+                            dn_dt_display = test_dt.strftime('%Y-%m-%d')
+                            dn_lunar_display = get_lunar_str(test_dt)
+                            break
+                        except:
+                            continue
+                    dn_remark = "依常規對齊隔年農曆同月同日辦理。符合對年相隔時間總計為 354 天（含起始日為 355 天）原則。"
                     
-                    dn_lunar_display = f"農曆 {test_lunar.lunar_month}月{test_lunar.lunar_day}日"
-                    break
-                except:
-                    continue
-        except:
-            pass
-            
-        # 💡 動態調整「對年」的 UI 備註文字
-        if is_death_leap:
-            dn_remark = f"⚠️此案依「死人無閏月」俗，已由原【閏 {lunar_now.lunar_month} 月】自動修正對齊隔年【正 {dn_m} 月】辦理"
-        else:
-            dn_remark = "依「對年對日作」原則完美對齊隔年同月同日（逢小月已由系統自動遞補防錯）"
+                # 補上星期與動態國曆差距驗證
+                if dn_dt_display != "無法計算":
+                    parsed_dn_dt = datetime.strptime(dn_dt_display, '%Y-%m-%d')
+                    dn_week_display = week_names[parsed_dn_dt.weekday()]
+                    
+                    # 計算此案實際之國曆天數差距
+                    days_diff = (parsed_dn_dt.date() - p_dt.date()).days
+                    dn_remark += f"（本案實際國曆相隔：{days_diff} 天，含起始日：{days_diff + 1} 天）"
+            except:
+                pass
             
         # 彙整表格資料
         calc_data = {
@@ -314,7 +374,7 @@ with tab3:
                 "🕯️ 頭七儀式 (第 6 天深夜)", 
                 "頭七正日 (第 7 天)", 
                 "百日 (第 100 天)", 
-                "對年 (隔年農曆同日)"
+                "對年 (周年紀念)"
             ],
             "國曆日期": [
                 p_dt.strftime('%Y-%m-%d'),
@@ -348,14 +408,8 @@ with tab3:
         
         st.markdown("---")
         st.subheader("📋 智能化祭祀日期與儀式推算結果表")
-        
-        # 顯示互動式表格
         st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
         
-        # 資訊卡強化：加入「死人無閏月」的文化知識補充
         st.info(
-            "💡 **民俗小常識：什麼是「對年對日作，死人無閏月」？**\n\n"
-            "1. **若往生當月正是閏月**：亡者世界是不過閏月的，因此系統會自動「扣除閏月」，將對年直接對應到隔年的**正月份**舉辦。\n"
-            "2. **若往生後的一年內適逢閏年曆法**：不論這一年之中多塞了哪一個閏月，對年絕對**不需要往後延一個月**。家屬只需按照原本往生的農曆月份與日子，在隔年直接對齊作祭拜即可。\n\n"
-            "*本系統已將上述邏輯完整內嵌至核心程式，請放心參考排程。*"
+            "💡"
         )
