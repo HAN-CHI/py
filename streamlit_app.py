@@ -124,14 +124,14 @@ with tab1:
                 lunar = ZhDate.from_datetime(target_date)
                 minguo_year = target_date.year - 1911
                 
-                leap_prefix = "閏 " if lunar.is_leap else ""
+                # 🛠️ 修正：將屬性改為正確的 leap_month
+                leap_prefix = "閏 " if lunar.leap_month else ""
                 lunar_display = f"{leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
                 ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
                 
                 st.markdown("---")
                 st.subheader("🔮 查詢對照結果：")
                 
-                # 🛠️ 核心修正：改用簡短的 cols 陣列，完美防禦複製斷行造成的錯誤
                 cols = st.columns(4)
                 with cols[0]:
                     st.metric(label="解析後西元國曆", value=target_date.strftime('%Y-%m-%d'))
@@ -178,7 +178,9 @@ with tab2:
                             try:
                                 mingo = f"民國 {dt.year - 1911} 年"
                                 lunar_obj = ZhDate.from_datetime(dt)
-                                leap_prefix = "閏" if lunar_obj.is_leap else ""
+                                
+                                # 🛠️ 修正：批次轉換也改為 leap_month
+                                leap_prefix = "閏" if lunar_obj.leap_month else ""
                                 
                                 return pd.Series([
                                     dt.strftime('%Y-%m-%d'),
