@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, date
 from zhdate import ZhDate
 import io
 import re
@@ -12,26 +12,28 @@ st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國通用版)")
 st.markdown("本系統已全面優化！不論輸入**西元曆**（如 2026-07-10）或**中華民國曆**（如 115-07-10、1150710），皆可自動識別並精準轉換。")
 
 # ==========================================
-# 🧠 核心：西元/民國智慧識別過濾器
+# 🧠 核心：西元/民國智慧識別過濾器 (已修正型態相容問題)
 # ==========================================
 def clean_and_parse_date(date_val):
     if pd.isna(date_val):
         return None
     
-    # 狀況 1：如果已經是 Excel 的日期物件或 datetime 物件
-    if isinstance(date_val, (datetime, pd.Timestamp)):
-        if date_val.year < 1900:
-            try:
-                return datetime(date_val.year + 1911, date_val.month, date_val.day)
-            except:
-                return None
-        return date_val.to_pydatetime() if hasattr(date_val, 'to_pydatetime') else date_val
+    # 狀況 1：如果是 Python 的日期或時間物件 (datetime, date, 或 Timestamp)
+    if isinstance(date_val, (datetime, date, pd.Timestamp)):
+        y, m, d = date_val.year, date_val.month, date_val.day
+        # 有時候系統或 Excel 把民國 115 年誤認成西元 0115 年，在這邊校正
+        if y < 1900:
+            y += 1911
+        try:
+            return datetime(y, m, d)
+        except:
+            return None
     
-    # 狀況 2：如果是純數字
+    # 狀況 2：如果是純數字 (例如 Excel 裡的 1150710)
     if isinstance(date_val, (int, float)):
         date_val = str(int(date_val))
         
-    # 狀況 3：如果是字串
+    # 狀況 3：如果是字串 (各種手打格式)
     if isinstance(date_val, str):
         text = date_val.strip()
         text = text.replace("民國", "").replace("西元", "").replace("Minguo", "")
@@ -51,11 +53,11 @@ def clean_and_parse_date(date_val):
         elif len(nums) == 1 and len(nums[0]) in [6, 7, 8]:
             s = nums[0]
             try:
-                if len(s) == 7:
+                if len(s) == 7:    # 民國 3 位數: 1150710
                     return datetime(int(s[:3]) + 1911, int(s[3:5]), int(s[5:]) or 1)
-                elif len(s) == 6:
+                elif len(s) == 6:  # 民國 2 位數: 990710
                     return datetime(int(s[:2]) + 1911, int(s[2:4]), int(s[4:]) or 1)
-                elif len(s) == 8:
+                elif len(s) == 8:  # 西元 4 位數: 20260710
                     return datetime(int(s[:4]), int(s[4:6]), int(s[6:]) or 1)
             except:
                 return None
@@ -81,7 +83,7 @@ with tab1:
     
     with col_input1:
         st.subheader("📍 方法 A")
-        date_picker = st.date_input("用日曆選單選擇日期：", datetime.today())
+        date_picker = st.date_input("用日曆選單選擇日期：", date.today())
         click_a = st.button("🚀 執行方法 A 查詢", use_container_width=True)
         if click_a:
             target_date = clean_and_parse_date(date_picker)
@@ -89,11 +91,8 @@ with tab1:
             
     with col_input2:
         st.subheader("📍 方法 B")
-        current_minguo_str = f"{datetime.today().year - 1911}/{datetime.today().strftime('%m/%d')}"
-        
-        # 🛠️ 這裡已修正：縮短提示文字，確保結尾有 ") 閉合，絕不漏字
+        current_minguo_str = f"{date.today().year - 1911}/{date.today().strftime('%m/%d')}"
         date_text = st.text_input("直接打字輸入（西元/民國皆可）：", value=current_minguo_str, help="範例: 115/7/10 或 2026-07-10")
-        
         click_b = st.button("🚀 執行方法 B 查詢", use_container_width=True)
         if click_b:
             target_date = clean_and_parse_date(date_text)
