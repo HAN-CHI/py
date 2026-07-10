@@ -124,8 +124,30 @@ tab1, tab2, tab3 = st.tabs([
 # 📌 分頁一：單日萬能查詢
 # ==========================================
 with tab1:
+    st.header("單日萬能轉換 (國曆/農曆互轉)")
     st.header("單日國曆轉農曆 (支援自由文字輸入)")
     st.markdown("請選擇使用 方法 A 或 方法 B 輸入，並點擊下方按鈕查詢。")
+
+
+        mode = st.radio("選擇轉換方向：", ["國曆 ➔ 農曆", "農曆 ➔ 國曆"], horizontal=True)
+    
+    if mode == "國曆 ➔ 農曆":
+        # (保持你原本的輸入與計算邏輯)
+        pass 
+        
+    else: # 農曆 ➔ 國曆
+        st.subheader("輸入農曆日期")
+        col_c1, col_c2, col_c3 = st.columns(3)
+        with col_c1:
+            lunar_y = st.number_input("農曆年份", min_value=1900, max_value=2100, value=2026)
+        with col_c2:
+            lunar_m = st.number_input("農曆月份", min_value=1, max_value=12, value=1)
+        with col_c3:
+            lunar_d = st.number_input("農曆日期", min_value=1, max_value=30, value=1)
+        
+        is_leap = st.checkbox("是否為閏月")
+        
+        if st.button("🚀 執行農曆轉國曆"):
     
     col_input1, col_input2 = st.columns(2)
     
@@ -188,34 +210,6 @@ with tab1:
         else:
             st.warning("⚠️ 無法識別此日期格式，請重新輸入（例如：115/7/10）")
     
-    st.header("單日萬能轉換 (國曆/農曆互轉)")
-    
-    # 新增模式選擇
-    mode = st.radio("選擇轉換方向：", ["國曆 ➔ 農曆", "農曆 ➔ 國曆"], horizontal=True)
-    
-    if mode == "國曆 ➔ 農曆":
-        # (保持你原本的輸入與計算邏輯)
-        pass 
-        
-    else: # 農曆 ➔ 國曆
-        st.subheader("輸入農曆日期")
-        col_c1, col_c2, col_c3 = st.columns(3)
-        with col_c1:
-            lunar_y = st.number_input("農曆年份", min_value=1900, max_value=2100, value=2026)
-        with col_c2:
-            lunar_m = st.number_input("農曆月份", min_value=1, max_value=12, value=1)
-        with col_c3:
-            lunar_d = st.number_input("農曆日期", min_value=1, max_value=30, value=1)
-        
-        is_leap = st.checkbox("是否為閏月")
-        
-        if st.button("🚀 執行農曆轉國曆"):
-            try:
-                # 使用 ZhDate 進行轉換
-                target_date = ZhDate(lunar_y, lunar_m, lunar_d, is_leap).to_datetime()
-                st.success(f"轉換結果：國曆 {target_date.strftime('%Y-%m-%d')}")
-            except Exception as e:
-                st.error("日期輸入錯誤，請確認該年是否有此農曆日期。")
 
 # ==========================================
 # 🕯️ 分頁三：頭七/百日/對年計算機
