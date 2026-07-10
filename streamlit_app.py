@@ -379,7 +379,7 @@ with tab3:
     
     with col_t4_1:
         st.subheader("📍 方式一：用日曆選單選擇")
-        dp_t4 = st.date_input("選擇日期：", st.session_state['latest_date'], key="tab4_dp")
+        dp_t4 = st.date_input("選擇日期：", st.session_state['latest_date'], min_value=date(1900, 1, 1), max_value=date(2100, 12, 31), key="tab4_dp")
         if st.button("🚀 依選單日期查詢", use_container_width=True, key="tab4_btn_a"):
             search_date = clean_and_parse_date(dp_t4)
             
