@@ -260,5 +260,5 @@ with tab3:
             st.markdown("### 3. 【年煞】方位對照")
             st.table(pd.DataFrame({"地支": ["寅午戌", "申子辰", "亥卯未", "巳酉丑"], "煞方": ["北方", "南方", "西方", "東方"]}))
             
-        except Exception as e:
+except Exception as e:
             st.error(f"❌ 處理失敗，請確認年份是否在 1900~2100 之間（錯誤原因: {e}）")
