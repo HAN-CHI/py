@@ -16,10 +16,10 @@ st.set_page_config(
 if 'latest_date' not in st.session_state:
     st.session_state['latest_date'] = date.today()
 
-st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀/塔位通用版)")
+st.title("🏮 跨世紀萬年曆自動轉換系統 (西元/民國/祭祀/雙重避煞塔位通用版)")
 st.markdown(
     "本系統支援西元曆、中華民國曆自動識別轉換，"
-    "內建傳統民俗頭七、百日、對年之精準祭祀時間計算，並包含生肖與農曆月份之塔位避煞方位查詢。"
+    "內建傳統頭七、百日、對年精算，並全面整合**「生肖吉方」、「動態年煞」與「農曆月煞」**之三合一塔位決策導航。"
 )
 
 # ==========================================
@@ -62,7 +62,7 @@ def get_tower_orientation(zodiac):
     return data.get(zodiac, {"吉方": "通用方位", "次吉": "通用方位", "煞方": "無特殊禁忌"})
 
 # ==========================================
-# 📋 依據使用者提供的圖表：計算農曆月份不宜座向 (忽略年煞)
+# 📋 依據使用者提供之圖表一：農曆月份不宜座向 (月煞)
 # ==========================================
 def get_lunar_month_shashang(lunar_month):
     if lunar_month in [1, 5, 9]:
@@ -74,6 +74,15 @@ def get_lunar_month_shashang(lunar_month):
     elif lunar_month in [4, 8, 12]:
         return "東方"
     return "無特殊限制"
+
+# ==========================================
+# 📋 依據使用者提供之圖表二：西元年份四年輪流規則 (年煞)
+# ==========================================
+def get_yearly_shashang(year):
+    # 2026=北, 2027=西, 2028=南, 2029=東，以此類推循環
+    cycle = ["北方", "西方", "南方", "東方"]
+    idx = (year - 2026) % 4
+    return cycle[idx]
 
 # ==========================================
 # 🧠 核心：西元/民國智慧識別過濾器
@@ -142,7 +151,6 @@ with tab1:
     st.markdown("請選擇使用 方法 A 或 方法 B 輸入，並點擊下方按鈕查詢。")
     
     col_input1, col_input2 = st.columns(2)
-    
     target_date = None
     is_triggered = False
     
@@ -411,11 +419,11 @@ with tab3:
         st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
 
 # ==========================================
-# 🦁 分頁四：生肖與塔位吉方查詢 (結合月煞避向機制)
+# 🦁 分頁四：生肖與塔位吉方查詢 (結合年煞、月煞全面避向機制)
 # ==========================================
 with tab4:
-    st.header("🦁 生肖與晉塔適宜方位查詢 (含月份不宜座向提示)")
-    st.markdown("輸入欲查詢之日期（西元/民國皆可），系統會自動換算為**農曆月份與生肖**，並動態提示應避開的**月份不宜座向**。")
+    st.header("🦁 生肖與晉塔適宜方位查詢 (年煞/月煞雙重防護)")
+    st.markdown("輸入欲查詢之日期（西元/民國皆可），系統會自動換算為**農曆月份與生肖**，並動態交叉比對您提供之「年煞」與「月煞」不宜座向。")
     
     col_t4_1, col_t4_2 = st.columns(2)
     search_date = None
@@ -431,7 +439,7 @@ with tab4:
         ld_t4 = st.session_state['latest_date']
         minguo_str_t4 = f"{ld_t4.year - 1911}/{ld_t4.strftime('%m/%d')}"
         ti_t4 = st.text_input(
-            "輸入西元或中華民國曆（如 54/3/22 或 1965-03-22）：", 
+            "輸入西元或中華民國曆（如 115/7/11 或 2026-07-11）：", 
             value=minguo_str_t4, 
             key="tab4_ti"
         )
@@ -440,56 +448,75 @@ with tab4:
             
     if search_date:
         try:
-            # 轉換為農曆以確認精準生肖、歲次與農曆月份
+            # 1. 轉換為農曆以確認精準生肖、歲次與農曆月份
             lunar_t4 = ZhDate.from_datetime(search_date)
             gz_name, zodiac_name = get_ganzhi_zodiac_details(lunar_t4.lunar_year)
             orientations = get_tower_orientation(zodiac_name)
             
-            # 獲取使用者提供圖表的「農曆月份不宜座向」
+            # 2. 核心命理規則計算 (年煞 + 月煞)
+            year_shashang = get_yearly_shashang(search_date.year)
             month_shashang = get_lunar_month_shashang(lunar_t4.lunar_month)
             
             st.session_state['latest_date'] = search_date.date()
             
             st.markdown("---")
-            st.subheader(f"🔮 【農曆 {lunar_t4.lunar_month} 月・生肖 {zodiac_name}】專屬命理與塔位解析")
+            st.subheader(f"🔮 【西元 {search_date.year} 年 / 農曆 {lunar_t4.lunar_month} 月・生肖 {zodiac_name}】雙重避煞精算")
             
-            # 以美觀的 Metric 卡片顯示基本資訊
+            # 以卡片清楚呈現四大核心指標
             c1, c2, c3, c4 = st.columns(4)
             with c1:
-                st.metric("輸入國曆日期", search_date.strftime('%Y-%m-%d'))
+                st.metric("查詢西元年度", f"{search_date.year} 年")
             with c2:
                 st.metric("對應農曆月份", f"農曆 {lunar_t4.lunar_month} 月")
             with c3:
-                st.metric("本命生肖歲次", f"{gz_name} 年 ({zodiac_name})")
+                st.metric("🚨 該年煞方 (四年輪替)", year_shashang)
             with c4:
-                st.metric("🚨 該月份不宜座向", month_shashang)
+                st.metric("🚨 該月煞方 (月份對應)", month_shashang)
                 
-            # 顯示方位推算結果表格
+            # 3. 建立並呈現綜合判定表格
             oriented_data = {
                 "評等分類": [
                     "🟢 最佳首選吉方 (大吉)", 
                     "🟡 次佳配選方位 (中吉)", 
                     "🔴 絕不可選：生肖相沖方",
-                    "⚠️ 依圖表提示：月份不宜座向"
+                    "❌ 絕不可選：本年大煞方位",
+                    "⚠️ 絕不可選：本月煞傷方位"
                 ],
                 "建議塔位坐向 (白話地理方位)": [
                     orientations["吉方"], 
                     orientations["次吉"], 
                     orientations["煞方"],
+                    f"忌坐【{year_shashang}】",
                     f"忌坐【{month_shashang}】"
                 ],
-                "風水堪輿說明說明": [
+                "風水堪輿說明": [
                     "此為本命三合、三會、或相生之本命祿位，進塔後最利於骨灰安穩、福廕子孫。",
                     "此方位雖非最優，但若與家族墓園、現成塔位環境衝突時，可作為折衷妥協之選。",
                     "此方向與本命生肖直接相沖（地支沖煞），民俗上認為磁場嚴重不合，務必避開。",
-                    f"依據您提供之民俗圖表規則：農曆 {lunar_t4.lunar_month} 月不宜選擇坐【{month_shashang}】之塔位（已忽略年煞）。"
+                    f"依據年三煞規則，西元 {search_date.year} 年煞方落在【{year_shashang}】，此年內進塔切勿選擇此坐向。",
+                    f"依據月煞規則，農曆 {lunar_t4.lunar_month} 月份不宜選擇坐【{month_shashang}】之塔位。"
                 ]
             }
             st.dataframe(pd.DataFrame(oriented_data), use_container_width=True)
             
-            # 智慧複核警告提示
-            if month_shashang in orientations["吉方"]:
-                st.error(f"⚠️ **重要衝突警告：** 雖然生肖首選吉方包含【{orientations['吉方']}】，但因該時間適逢農曆 {lunar_t4.lunar_month} 月（月煞【{month_shashang}】），建議此月份應暫時避開該方位，或改選【次佳配選方位】。")
+            # 4. 智慧衝突交叉檢查與主動警告
+            conflict_warnings = []
+            
+            # 檢查生肖吉方是否踩到年煞或月煞
+            for direction in ["正北", "北", "正南", "南", "正東", "東", "正西", "西"]:
+                if direction in orientations["吉方"]:
+                    if direction in year_shashang:
+                        conflict_warnings.append(f"❌ **嚴重衝突：** 本命首選吉方包含【{direction}】，但該方位剛好是當年【{year_shashang}年煞】，**此年內絕對不可以用此方位！**")
+                    if direction in month_shashang:
+                        conflict_warnings.append(f"⚠️ **月份衝突：** 本命首選吉方包含【{direction}】，但因進塔時間為農曆 {lunar_t4.lunar_month} 月（月煞為【{month_shashang}】），**此月份內建議避開此方位，或改用次佳方位。**")
+            
+            # 呈現警告區塊
+            if conflict_warnings:
+                st.markdown("### 🔔 智能堪輿衝突提示：")
+                for warning in conflict_warnings:
+                    st.error(warning)
+            else:
+                st.success("🎉 經全自動交叉覆核：該日期的年煞、月煞方位與您的生肖吉方無直接衝突，可放心參考上述首選吉方挑選塔位！")
             
             st.caption(
                 "💡 **地理小知識：** 這裡所說的『坐向』是指骨灰罈入塔位後，其『刻字正面（或照片正面）』所面朝的反方向。例如：『坐北朝南』意即逝者照片背對北方，面向南方看出去。"
