@@ -151,17 +151,24 @@ with tab1:
                 target_date = clean_and_parse_date(date_text)
                 is_triggered = True
 
-    else: # 農曆 ➔ 國曆 (優化版)
+else: # 農曆 ➔ 國曆
         st.subheader("📍 方法 C (農曆輸入)")
         
-        # 新增曆法選擇
+        # 預先計算當前的民國年份
+        current_year = date.today().year
+        current_minguo_year = current_year - 1911
+        
         cal_type = st.radio("農曆對應的年份格式：", ["西元曆", "中華民國曆"], horizontal=True)
         
         c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
         with c1:
-            # 根據選擇顯示年份提示
+            # 根據選擇動態改變預設值
+            default_val = current_year if cal_type == "西元曆" else current_minguo_year
             year_label = "農曆年份 (西元)" if cal_type == "西元曆" else "農曆年份 (民國)"
-            l_year = st.number_input(year_label, 1, 2100, 2026)
+            
+            # 使用我們算出的 default_val
+            l_year = st.number_input(year_label, 1, 2100, default_val)
+            
         with c2:
             l_month = st.number_input("月份", 1, 12, 1)
         with c3:
