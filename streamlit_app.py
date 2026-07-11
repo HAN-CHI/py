@@ -467,33 +467,16 @@ with tab3:
 # 🪦 新增分頁4：土葬二十四山查詢
 # ==========================================
 with tab4:
-    st.header("🪦 仙命二十四山吉凶查詢")
+    st.header("🪦 仙命二十四山吉凶說明")
     
-    # 1. 選擇仙命
     si_ming = st.selectbox("請選擇亡者仙命：", list(BURIAL_RULES_60.keys()))
-    
-    # 2. 顯示該仙命的宜忌概況
     rule = BURIAL_RULES_60[si_ming]
-    st.markdown(f"**仙命：** `{si_ming}`")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        st.success(f"✅ 宜葬六山：\n{rule['宜']}")
-    with col2:
-        st.error(f"❌ 忌葬六山：\n{rule['忌']}")
+    # 顯示宜葬詳細資訊
+    st.success(f"✅ **宜葬六山**：{'、'.join(rule['宜']['方位'])}")
+    st.info(f"📋 斷語：{rule['宜']['說明']}")
     
-    st.divider()
-    
-    # 3. 快速吉凶檢測功能
-    st.subheader("🔍 坐向吉凶快速判定")
-    target_orient = st.text_input("請輸入您想檢測的坐向（如：子）：")
-    
-    if target_orient:
-        if target_orient in rule['宜'].split('、'):
-            st.balloons()
-            st.success(f"【吉】坐 {target_orient} 向符合 {si_ming} 仙命之宜葬方位！")
-        elif target_orient in rule['忌'].split('、'):
-            st.error(f"【凶】坐 {target_orient} 向屬於 {si_ming} 仙命之忌葬方位，請勿使用！")
-        else:
-            st.warning("【平】該坐向不在宜/忌名單內，請參考專業堪輿書籍或請教老師。")
+    # 顯示忌葬詳細資訊
+    st.error(f"❌ **忌葬六山**：{'、'.join(rule['忌']['方位'])}")
+    st.warning(f"⚠️ 斷語：{rule['忌']['說明']}")
 
