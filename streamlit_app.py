@@ -484,5 +484,7 @@ with tab4:
         st.error("❌ 忌葬六山")
         st.write(f"**方位**：{rule['忌']['方位']}")
         st.caption(f"說明：{rule['忌']['說明']}")
-}
+
+
+
 
