@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime, date, timedelta
-from zhdate import ZhDate
 import io
 import re
+from datetime import datetime, date, timedelta
+from zhdate import ZhDate
+from config_data import BURIAL_RULES_60
+
 
 # 設定網頁標題與圖示
 st.set_page_config(
@@ -65,16 +67,8 @@ def get_tower_orientation(zodiac):
 # ==========================================
 # 🪦 風水地理：60仙命與二十四山吉凶 (土葬)
 # ==========================================
-def get_burial_orientation(year_gz):
-    # 簡化版對照表：根據六十甲子仙命（亡者出生年）推算適宜坐向
-    # 實際堪輿中，二十四山需極精細計算，此處為基礎通則範例
-    data = {
-        "甲子": {"宜": "坐申、坐辰、坐乙", "忌": "坐午"},
-        "乙丑": {"宜": "坐酉、坐巳、坐丙", "忌": "坐未"},
-        # ... (您可以依照此格式補齊 60 甲子)
-    }
-    # 若未找到特定甲子，返回基礎通用建議
-    return data.get(year_gz, {"宜": "請諮詢專業堪輿師（依仙命與山向合盤）", "忌": "忌坐山沖命"})
+def display_burial_info(si_ming):
+    rules = BURIAL_RULES_60.get(si_ming)
 
 # ==========================================
 # 🧠 核心：西元/民國智慧識別過濾器
@@ -473,19 +467,33 @@ with tab3:
 # 🪦 新增分頁4：土葬二十四山查詢
 # ==========================================
 with tab4:
-    st.header("🪦 土葬二十四山配 60 仙命查詢")
-    st.markdown("輸入亡者出生年份，推算適合的土葬山向。")
+    st.header("🪦 仙命二十四山吉凶查詢")
     
-    birth_year = st.number_input("請輸入亡者出生之西元年份：", 1900, 2100, 1950)
+    # 1. 選擇仙命
+    si_ming = st.selectbox("請選擇亡者仙命：", list(BURIAL_RULES_60.keys()))
     
-    if st.button("🚀 推算仙命坐向"):
-        # 計算仙命干支
-        gz_name, _ = get_ganzhi_zodiac_details(birth_year)
-        result = get_burial_orientation(gz_name)
-        
-        st.subheader(f"🕯️ 仙命：{gz_name} 年")
-        st.success(f"✅ 建議宜葬六山：{result['宜']}")
-        st.error(f"❌ 忌葬六山（煞方）：{result['忌']}")
-        
-        st.info("💡 提醒：風水學中二十四山向極為複雜，涉及「坐山」與「命理」的合盤。建議實際安葬時，務必請專業地理師配合墳地地形與山脈龍穴進行最終確認。")
+    # 2. 顯示該仙命的宜忌概況
+    rule = BURIAL_RULES_60[si_ming]
+    st.markdown(f"**仙命：** `{si_ming}`")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.success(f"✅ 宜葬六山：\n{rule['宜']}")
+    with col2:
+        st.error(f"❌ 忌葬六山：\n{rule['忌']}")
+    
+    st.divider()
+    
+    # 3. 快速吉凶檢測功能
+    st.subheader("🔍 坐向吉凶快速判定")
+    target_orient = st.text_input("請輸入您想檢測的坐向（如：子）：")
+    
+    if target_orient:
+        if target_orient in rule['宜'].split('、'):
+            st.balloons()
+            st.success(f"【吉】坐 {target_orient} 向符合 {si_ming} 仙命之宜葬方位！")
+        elif target_orient in rule['忌'].split('、'):
+            st.error(f"【凶】坐 {target_orient} 向屬於 {si_ming} 仙命之忌葬方位，請勿使用！")
+        else:
+            st.warning("【平】該坐向不在宜/忌名單內，請參考專業堪輿書籍或請教老師。")
 
