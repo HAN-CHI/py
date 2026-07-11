@@ -467,16 +467,22 @@ with tab3:
 # 🪦 新增分頁4：土葬二十四山查詢
 # ==========================================
 with tab4:
-    st.header("🪦 仙命二十四山吉凶說明")
+    st.header("🪦 仙命二十四山吉凶與斷語查詢")
     
-    si_ming = st.selectbox("請選擇亡者仙命：", list(BURIAL_RULES_60.keys()))
+    si_ming = st.selectbox("請選擇仙命：", list(BURIAL_RULES_60.keys()))
     rule = BURIAL_RULES_60[si_ming]
     
-    # 顯示宜葬詳細資訊
-    st.success(f"✅ **宜葬六山**：{'、'.join(rule['宜']['方位'])}")
-    st.info(f"📋 斷語：{rule['宜']['說明']}")
+    # 建立兩欄顯示
+    col_yi, col_ji = st.columns(2)
     
-    # 顯示忌葬詳細資訊
-    st.error(f"❌ **忌葬六山**：{'、'.join(rule['忌']['方位'])}")
-    st.warning(f"⚠️ 斷語：{rule['忌']['說明']}")
+    with col_yi:
+        st.success("✅ 宜葬六山")
+        st.write(f"**方位**：{rule['宜']['方位']}")
+        st.caption(f"說明：{rule['宜']['說明']}")
+        
+    with col_ji:
+        st.error("❌ 忌葬六山")
+        st.write(f"**方位**：{rule['忌']['方位']}")
+        st.caption(f"說明：{rule['忌']['說明']}")
+}
 
