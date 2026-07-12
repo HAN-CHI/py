@@ -494,7 +494,7 @@ with tab4:
 with tab5:
     st.header("📅 擇日分析控制台")
     from fengshui_lib import PreciseCalendar, TimeSafetyEngine
-    from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
+    from fengshui_db import PENGZU_STEMS,PENGZU_BRANCHES
 
     # 1. 介面輸入
     col_date, col_hour = st.columns(2)
