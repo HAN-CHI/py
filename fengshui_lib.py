@@ -1,5 +1,40 @@
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
+import sxtwl
 
+# 初始化時憲曆引擎
+lunar_engine = sxtwl.Lunar()
+
+class PreciseCalendar:
+    @staticmethod
+    def get_four_pillars(year, month, day, hour):
+        """
+        輸入西元日期與時辰，回傳精準干支 (年、月、日、時)
+        hour: 0-23
+        """
+        # 1. 轉換為時憲曆日期
+        jd = sxtwl.Jd(year, month, day)
+        
+        # 2. 獲取干支資訊
+        # day_ganzhi 包含該日的干支，lunar_date 包含農曆資訊
+        day_info = lunar_engine.getDayBySolar(year, month, day)
+        
+        # 3. 獲取年干支、月干支、日干支
+        year_gz = f"{day_info.yearGZ.tg}{day_info.yearGZ.dz}"
+        month_gz = f"{day_info.monthGZ.tg}{day_info.monthGZ.dz}"
+        day_gz = f"{day_info.dayGZ.tg}{day_info.dayGZ.dz}"
+        
+        # 4. 推算時干支 (需傳入日干索引)
+        # sxtwl 內建 getShiGZ 方法
+        shi_gz = lunar_engine.getShiGZ(day_info.dayGZ.tg, hour // 2)
+        hour_gz = f"{shi_gz.tg}{shi_gz.dz}"
+        
+        return {
+            "年柱": year_gz,
+            "月柱": month_gz,
+            "日柱": day_gz,
+            "時柱": hour_gz,
+            "農曆": f"{day_info.lunarMonth}月{day_info.lunarDay}日"
+        }
 
 class CalendarEngine:
     @staticmethod
