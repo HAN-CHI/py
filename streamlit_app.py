@@ -491,42 +491,108 @@ with tab4:
 # 🪦 新增分頁5：萬年曆
 # ==========================================
 with tab5:
-    st.header("📅 萬年曆與擇日數據查詢")
-    from fengshui_lib import GanZhi
-    from zhdate import ZhDate
-    from datetime import datetime
+    st.header("📌 單日萬能查詢 (國曆/農曆互轉)")
+    
+    # 選擇模式
+    mode = st.radio("請選擇轉換方式：", ["國曆 ➔ 農曆", "農曆 ➔ 國曆"], horizontal=True)
+    st.markdown("---")
+    
+    target_date = None
+    is_triggered = False
 
-    # 1. 先定義日期選擇器
-    selected_date = st.date_input("選擇查詢日期：", st.session_state.get('latest_date', datetime.now().date()), key="tab5_dp")
-    
-    # 2. 在選擇器之後，才進行後續計算
-    # 為了避免 ZhDate 報錯，確保它是 datetime 物件
-    dt = datetime.combine(selected_date, datetime.min.time())
-    lunar = ZhDate.from_datetime(dt)
-    minguo_y = selected_date.year - 1911
-    
-    # 顯示基礎資訊
-    st.subheader(f"📍 民國 {minguo_y} 年 {selected_date.month} 月 {selected_date.day} 日")
-    st.write(f"農曆：{lunar.lunar_month}月 {lunar.lunar_day}日")
-    
-    # 3. 數據摘要區塊 (移到計算下方，這樣才有數據可顯示)
-    st.subheader("🔮 當日風水摘要")
-    col1, col2, col3 = st.columns(3)
-    col1.metric("農曆", f"{lunar.lunar_month}月{lunar.lunar_day}日")
-    
-    # 注意：若您還沒在 fengshui_lib 寫 get_day_ganzhi_simplified，這裡會報錯
-    # 先用暫時的字串顯示避免報錯
-    col2.metric("日柱干支", "計算中...") 
-    
-    col3.metric("季節", "夏季" if 4 <= selected_date.month <= 6 else "其他")
-
-    # 4. 數據對應區塊 (按鈕互動)
-    if st.button("🔍 載入該日風水數據"):
-        # 這裡演示如何將計算出的干支對應到您的規律中
-        year_gan = "甲" 
-        month_gan = GanZhi.get_month_gan(year_gan, lunar.lunar_month)
+    if mode == "國曆 ➔ 農曆":
+        # (保持原樣...)
+        col_input1, col_input2 = st.columns(2)
+        with col_input1:
+            st.subheader("📍 方法 A (日曆選單)")
+            date_picker = st.date_input("選擇日期：", st.session_state['latest_date'], min_value=date(1900, 1, 1), max_value=date(2100, 12, 31), key="tab1_dp")
+            if st.button("🚀 執行方法 A 查詢", use_container_width=True, key="tab1_btn_a"):
+                target_date = clean_and_parse_date(date_picker)
+                is_triggered = True
+        with col_input2:
+            st.subheader("📍 方法 B (文字輸入)")
+            ld = st.session_state['latest_date']
+            current_minguo_str = f"{ld.year - 1911}/{ld.strftime('%m/%d')}"
+            date_text = st.text_input("直接輸入日期：", value=current_minguo_str, help="範例: 115/7/10 或 2026-07-10", key="tab1_ti")
+            if st.button("🚀 執行方法 B 查詢", use_container_width=True, key="tab1_btn_b"):
+                target_date = clean_and_parse_date(date_text)
+                is_triggered = True
+            
+    else: # 農曆 ➔ 國曆
+        st.subheader("📍 方法 C (農曆輸入)")
         
-        st.markdown("---")
-        st.success(f"該月干為：{month_gan}")
-        st.info("💡 系統已對應至該仙命的風水數據庫。")
+        # 預先計算當前的民國年份
+        current_year = date.today().year
+        current_minguo_year = current_year - 1911
+        
+        cal_type = st.radio("農曆對應的年份格式：", ["西元曆", "中華民國曆"], horizontal=True)
+        
+        c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+        with c1:
+            # 根據選擇動態改變預設值
+            default_val = current_year if cal_type == "西元曆" else current_minguo_year
+            year_label = "農曆年份 (西元)" if cal_type == "西元曆" else "農曆年份 (民國)"
+            
+            # 使用我們算出的 default_val
+            l_year = st.number_input(year_label, 1, 2100, default_val)
+            
+        with c2:
+            l_month = st.number_input("月份", 1, 12, 1)
+        with c3:
+            l_day = st.number_input("日期", 1, 30, 1)
+        with c4:
+            is_leap = st.checkbox("是否閏月")
+            
+        if st.button("🚀 執行農曆轉國曆查詢", use_container_width=True, key="tab1_btn_c"):
+            try:
+                # 轉換年份邏輯
+                actual_year = l_year + 1911 if cal_type == "中華民國曆" else l_year
+                target_date = ZhDate(actual_year, l_month, l_day, is_leap).to_datetime()
+                is_triggered = True
+            except Exception as e:
+                st.error(f"❌ 日期輸入錯誤，請確認該農曆日期是否存在。")
+
+    # === 統一顯示結果區塊 ===
+    if is_triggered and target_date:
+        st.session_state['latest_date'] = target_date.date()
+        try:
+            lunar = ZhDate.from_datetime(target_date)
+            minguo_year = target_date.year - 1911
+            leap_prefix = "閏" if lunar.leap_month else ""
+            lunar_display = f"農曆 {leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
+            ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
+            
+            st.markdown("---")
+            st.subheader("🔮 查詢對照結果：")
+            cols = st.columns(4)
+            cols[0].metric("解析後西元國曆", target_date.strftime('%Y-%m-%d'))
+            cols[1].metric("對應中華民國曆", f"民國 {minguo_year} 年")
+            cols[2].metric("計算後農曆", lunar_display)
+            cols[3].metric("歲次干支 (生肖)", ganzhi_display)
+            st.success(f"💡 完整農曆中文表示：{lunar.chinese()}")
+        except Exception as e:
+            st.error(f"❌ 轉換錯誤: {e}")
+
+# === 統一顯示結果區塊 ===
+    if is_triggered and target_date:
+        # ... (前段保持不變)
+        try:
+            # 獲取完整資訊
+            lunar = ZhDate.from_datetime(target_date)
+            
+            # 使用您想要的格式輸出
+            st.markdown("---")
+            st.subheader("🔮 傳統擇日資訊")
+            
+            # 這裡您可以直接呼叫轉換函式或直接組合字串
+            # 範例樣式：
+            st.success(f"### 🗓️ 農曆紀錄")
+            st.write(f"**{lunar.lunar_year}年** | **{lunar.lunar_month}月** | **{lunar.lunar_day}日**")
+            
+            # 這裡顯示您指定的格式
+            st.markdown(f"> **傳統稱謂：** 農曆 {lunar.lunar_year}年 {lunar.lunar_month}月 {lunar.lunar_day}日")
+            st.markdown(f"> **干支紀時：** 庚寅木(孟春)月 丁丑水 軫閉日")
+            
+        except Exception as e:
+            st.error(f"❌ 顯示錯誤: {e}")
 
