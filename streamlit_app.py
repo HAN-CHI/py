@@ -128,7 +128,7 @@ tab1,tab2,tab3,tab4,tab5 = st.tabs([
     "📌 單日萬能查詢",
     "🕯️ 頭七/百日/對年計算機",
     "🦁 生肖與塔位吉方查詢",
-    "🪦 土葬二十四山查詢"
+    "🪦 土葬二十四山查詢",
     "📅 萬年曆"
 ])
 
@@ -490,7 +490,28 @@ with tab4:
 # ==========================================
 # 🪦 新增分頁5：萬年曆
 # ==========================================
+with tab5:
+    st.header("📅 互動式萬年曆與擇日運算")
+    
+    # 讓使用者選擇年份與月份
+    col1, col2 = st.columns(2)
+    with col1:
+        year = st.number_input("年份", value=2026)
+    with col2:
+        month = st.selectbox("月份", range(1, 13))
+        
+    # 這裡未來可以接入您的萬年曆資料庫
+    st.info(f"您正在查詢 {year} 年 {month} 月的資訊")
+    
+    # 使用我們剛剛寫的函式進行推算
+    st.subheader("擇日基礎計算")
+    year_gan = st.text_input("輸入該年天干 (如：丙):")
+    if year_gan:
+        month_gan = get_month_gan(year_gan, month)
+        st.write(f"{year}年 {month}月 的月干為：**{month_gan}**")
 
+    # 顯示萬年曆表格 (您可以將圖片中的表格內容整理成 DataFrame 顯示)
+    # st.dataframe(your_calendar_data)
 
 
 
