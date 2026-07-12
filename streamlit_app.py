@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-from fengshui_lib import PreciseCalendar
 from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
+from fengshui_lib import PreciseCalendar, TimeSafetyEngine
+from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 #from fengshui_lib import FengShuiEngine
 
 
@@ -493,8 +494,6 @@ with tab4:
 # ==========================================
 with tab5:
     st.header("📅 擇日分析控制台")
-    from fengshui_lib import PreciseCalendar, TimeSafetyEngine
-    from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 
     # 1. 介面輸入
     col_date, col_hour = st.columns(2)
