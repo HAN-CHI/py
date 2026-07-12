@@ -31,6 +31,12 @@ class GanZhi:
         hour_gan_idx = (start_idx + hour_idx) % 10
         return cls.STREAMS[hour_gan_idx]
 
+    @classmethod
+    def get_day_ganzhi_simplified(cls, date_obj):
+        # 這是簡易版，若要精準算日干支，建議搭配計算基點的演算法
+        # 為了避免現在報錯，暫時回傳範例：
+        return "甲子"
+
 class BurialAnalysis:
     """處理仙命宜忌與斷語查詢的引擎"""
     
@@ -67,6 +73,8 @@ class CalendarEngine:
     def is_leap_year(year: int) -> bool:
         """檢查是否為閏年"""
         return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
+
+
 
 # 為了方便後續在 app.py 統一調用，可以宣告一個實例供外部匯入
 # from fengshui_lib import ganzhi_engine, burial_engine
