@@ -1,4 +1,4 @@
-from fengshui_db.py import PENGZU_STEMS, PENGZU_BRANCHES
+from fengshui_db.py import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES
 
 
 class CalendarEngine:
