@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import io
 import re
-import sxtwl
 from fengshui_lib import PreciseCalendar
 from datetime import datetime, date, timedelta
 from zhdate import ZhDate
