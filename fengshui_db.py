@@ -71,3 +71,28 @@ HUANGDAO_START_RULES = {
     "子": "金匱", "午": "金匱",
     "丑": "天刑", "未": "天刑"
 }
+
+class TimeEngine:
+    # 五鼠遁對照表：{日干: 子時的天干}
+    WU_SHU_DUN = {
+        "甲": "甲", "己": "甲",
+        "乙": "丙", "庚": "丙",
+        "丙": "戊", "辛": "戊",
+        "丁": "庚", "壬": "庚",
+        "戊": "壬", "癸": "壬"
+    }
+    
+    STEMS = "甲乙丙丁戊己庚辛壬癸"
+
+    @staticmethod
+    def get_hour_gan(day_gan, hour_idx):
+        """
+        day_gan: 當日天干 (如 '甲')
+        hour_idx: 時辰索引 (0:子, 1:丑, ..., 11:亥)
+        """
+        start_gan = TimeEngine.WU_SHU_DUN.get(day_gan)
+        start_idx = TimeEngine.STEMS.index(start_gan)
+        # 時干計算公式：(子時天干索引 + 時辰索引) % 10
+        hour_gan = TimeEngine.STEMS[(start_idx + hour_idx) % 10]
+        return hour_gan
+
