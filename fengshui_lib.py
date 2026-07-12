@@ -1,4 +1,4 @@
-from fengshui_db.py import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES
+from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 
 
 class CalendarEngine:
@@ -23,3 +23,24 @@ def get_today_pengzu(gan, zhi):
         "天干百忌": PENGZU_STEMS.get(gan, "今日天干無特殊禁忌。"),
         "地支百忌": PENGZU_BRANCHES.get(zhi, "今日地支無特殊禁忌。")
     }
+
+
+class HuangDaoEngine:
+    @staticmethod
+    def get_hour_god(day_branch, hour_idx):
+        """
+        day_branch: 當日地支 (如 '子')
+        hour_idx: 時辰索引 (0:子, 1:丑, ..., 11:亥)
+        """
+        # 1. 找出子時起算的吉神
+        start_god = HUANGDAO_START_RULES.get(day_branch)
+        
+        # 2. 獲取完整順序 (圖片中的 12 神順序)
+        sequence = ["青龍", "明堂", "天刑", "朱雀", "金匱", "天德", "白虎", "玉堂", "天牢", "玄武", "司命", "勾陳"]
+        
+        # 3. 計算該時辰的神煞
+        start_idx = sequence.index(start_god)
+        target_idx = (start_idx + hour_idx) % 12
+        god_name = sequence[target_idx]
+        
+        return god_name, HUANGDAO_GODS[god_name]
