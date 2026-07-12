@@ -538,4 +538,3 @@ with tab5:
     day_gz = pillars["日柱"]
     record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
     st.info(f"**日課吉凶：{record['吉凶']}** | {record['斷語']}")
-
