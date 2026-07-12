@@ -1,17 +1,11 @@
-# calendar_db.py
-# 這是您的干支規則與神煞對應表
+class CalendarEngine:
+    @staticmethod
+    def get_jianchu(lunar_date_idx):
+        """根據農曆日期索引計算建除十二神"""
+        # 需配合節氣，這裡僅為結構範例
+        return CALENDAR_RULES["JianChu"]["sequence"][lunar_date_idx % 12]
 
-CALENDAR_RULES = {
-    "GanZhi": {
-        "Stems": "甲乙丙丁戊己庚辛壬癸",
-        "Branches": "子丑寅卯辰巳午未申酉戌亥",
-        "Elements": ["金", "木", "水", "火", "土"] # 可搭配五行納音
-    },
-    "JianChu": { # 建除十二神 (週期性循環)
-        "sequence": ["建", "除", "滿", "平", "定", "執", "破", "危", "成", "收", "開", "閉"]
-    },
-    "Constellations": { # 二十八宿對應表
-        "sequence": ["角", "亢", "氐", "房", "心", "尾", "箕", "斗", "牛", "女", "虛", "危", "室", "壁", 
-                     "奎", "婁", "胃", "昴", "畢", "觜", "參", "井", "鬼", "柳", "星", "張", "翼", "軫"]
-    }
-}
+    @staticmethod
+    def get_constellation(date_delta):
+        """根據與基點日期的天數差，推算二十八宿"""
+        return CALENDAR_RULES["Constellations"]["sequence"][date_delta % 28]
