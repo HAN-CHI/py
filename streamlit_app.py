@@ -554,28 +554,6 @@ with tab5:
 
     # === 統一顯示結果區塊 ===
     if is_triggered and target_date:
-        st.session_state['latest_date'] = target_date.date()
-        try:
-            lunar = ZhDate.from_datetime(target_date)
-            minguo_year = target_date.year - 1911
-            leap_prefix = "閏" if lunar.leap_month else ""
-            lunar_display = f"農曆 {leap_prefix}{lunar.lunar_month}月{lunar.lunar_day}日"
-            ganzhi_display = get_ganzhi_zodiac(lunar.lunar_year)
-            
-            st.markdown("---")
-            st.subheader("🔮 查詢對照結果：")
-            cols = st.columns(4)
-            cols[0].metric("解析後西元國曆", target_date.strftime('%Y-%m-%d'))
-            cols[1].metric("對應中華民國曆", f"民國 {minguo_year} 年")
-            cols[2].metric("計算後農曆", lunar_display)
-            cols[3].metric("歲次干支 (生肖)", ganzhi_display)
-            st.success(f"💡 完整農曆中文表示：{lunar.chinese()}")
-        except Exception as e:
-            st.error(f"❌ 轉換錯誤: {e}")
-
-# === 統一顯示結果區塊 ===
-    if is_triggered and target_date:
-        # ... (前段保持不變)
         try:
             # 獲取完整資訊
             lunar = ZhDate.from_datetime(target_date)
