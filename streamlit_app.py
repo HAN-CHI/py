@@ -5,7 +5,7 @@ import re
 from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
-from fengshui_lib import FengShuiEngine
+#from fengshui_lib import FengShuiEngine
 
 
 # 設定網頁標題與圖示
