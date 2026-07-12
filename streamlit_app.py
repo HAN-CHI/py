@@ -517,11 +517,12 @@ with tab5:
         month_gan = GanZhi.get_month_gan(year_gan, lunar.lunar_month)
         
         st.markdown("---")
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric("當日干支", f"{month_gan}月...日")
-        with col2:
-            st.metric("五虎遁月結果", month_gan)
+# 建議您在 Tab 5 加入這個小卡片，直接呈現該日干支規律
+    st.subheader("🔮 當日風水摘要")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("農曆", f"{lunar.lunar_month}月{lunar.lunar_day}日")
+    col2.metric("日柱干支", f"{GanZhi.get_day_ganzhi_simplified(selected_date)}") # 建議您新增此輔助函式
+    col3.metric("季節", "夏季" if 4 <= selected_date.month <= 6 else "其他")
             
         st.info("💡 系統已對應至該仙命的風水數據庫，請確認方位以進行規律分析。")
 
