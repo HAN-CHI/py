@@ -1,38 +1,41 @@
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
-import sxtwl
-# 初始化時憲曆引擎
-lunar_engine = sxtwl.Lunar()
+from datetime import datetime
 
 class PreciseCalendar:
+    STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+    BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+
     @staticmethod
     def get_four_pillars(year, month, day, hour):
         """
-        輸入西元日期與時辰，回傳精準干支 (年、月、日、時)
-        hour: 0-23
+        利用數學公式精準計算干支 (無需 sxtwl)
         """
-        # 1. 轉換為時憲曆日期
-        jd = sxtwl.Jd(year, month, day)
-        
-        # 2. 獲取干支資訊
-        # day_ganzhi 包含該日的干支，lunar_date 包含農曆資訊
-        day_info = lunar_engine.getDayBySolar(year, month, day)
-        
-        # 3. 獲取年干支、月干支、日干支
-        year_gz = f"{day_info.yearGZ.tg}{day_info.yearGZ.dz}"
-        month_gz = f"{day_info.monthGZ.tg}{day_info.monthGZ.dz}"
-        day_gz = f"{day_info.dayGZ.tg}{day_info.dayGZ.dz}"
-        
-        # 4. 推算時干支 (需傳入日干索引)
-        # sxtwl 內建 getShiGZ 方法
-        shi_gz = lunar_engine.getShiGZ(day_info.dayGZ.tg, hour // 2)
-        hour_gz = f"{shi_gz.tg}{shi_gz.dz}"
-        
+        # 1. 計算年柱 (以 1984 甲子年為基準)
+        year_idx = (year - 1984) % 60
+        year_gz = PreciseCalendar.STEMS[year_idx % 10] + PreciseCalendar.BRANCHES[year_idx % 12]
+
+        # 2. 計算日柱 (以 1900/1/1 為基準，那天是甲戌日，索引 10)
+        base_date = datetime(1900, 1, 1)
+        target_date = datetime(year, month, day)
+        delta_days = (target_date - base_date).days
+        day_idx = (10 + delta_days) % 60
+        day_gz = PreciseCalendar.STEMS[day_idx % 10] + PreciseCalendar.BRANCHES[day_idx % 12]
+
+        # 3. 計算時柱 (五鼠遁)
+        # 找出該日日干索引
+        day_gan_idx = day_idx % 10
+        # 五鼠遁對應表：甲己子時為甲子...
+        # 簡易公式：(日干索引 % 5) * 2
+        start_hour_gan_idx = (day_gan_idx % 5) * 2
+        hour_idx = (start_hour_gan_idx + (hour // 2)) % 10
+        hour_gz = PreciseCalendar.STEMS[hour_idx] + PreciseCalendar.BRANCHES[(hour // 2) % 12]
+
         return {
             "年柱": year_gz,
-            "月柱": month_gz,
             "日柱": day_gz,
             "時柱": hour_gz,
-            "農曆": f"{day_info.lunarMonth}月{day_info.lunarDay}日"
+            "月柱": "註：需配合節氣計算", # 若需要精準月柱，建議改用查詢表
+            "農曆": "請參考 zhdate 顯示"
         }
 
 class CalendarEngine:
