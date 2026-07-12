@@ -528,7 +528,7 @@ with tab5:
 
     # 五不遇時分析
     hour_gan = pillars["時柱"][0]
-    _, is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, selected_hour // 2)
+    is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, selected_hour // 2)
     if is_unsafe:
         st.error(f"❌ 當前時辰 ({hour_gan}時) 為『五不遇時』，傳統擇日建議避開！")
     else:
