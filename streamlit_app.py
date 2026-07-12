@@ -511,6 +511,8 @@ with tab5:
     
     # 顯示四柱
     st.subheader("🔮 當日四柱結構")
+    # 這裡顯示農曆，放在最上方非常直觀
+    st.info(f"📅 **農曆日期：** {pillars['農曆']} ({pillars['農曆字串']})")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("年柱", pillars["年柱"])
     c2.metric("月柱", pillars["月柱"])
