@@ -492,42 +492,50 @@ with tab4:
 # ==========================================
 with tab5:
     st.header("📅 萬年曆與吉凶擇日運算")
+    from fengshui_lib import GanZhi, BurialAnalysis
+    from config_data import BURIAL_RULES_60
     
-    # 選擇檢視模式
-    mode = st.radio("請選擇查詢模式：", ["按日期查詢", "按月份總覽"], horizontal=True, key="tab5_mode")
+    # 初始化分析引擎
+    burial_engine = BurialAnalysis(BURIAL_RULES_60)
+    
+    # 模式選擇
+    mode = st.radio("請選擇查詢模式：", ["日期推算與干支", "吉凶規律對照"], horizontal=True)
     st.markdown("---")
 
-    if mode == "按日期查詢":
-        col_cal, col_input = st.columns([1, 1])
-        with col_cal:
-            # 讓使用者快速選定特定日子
-            selected_date = st.date_input("選擇日期：", st.session_state['latest_date'], key="tab5_dp")
+    if mode == "日期推算與干支":
+        c1, c2, c3 = st.columns(3)
+        year = c1.number_input("年份 (西元)", value=2026)
+        month = c2.number_input("月份", 1, 12, 7)
+        day = c3.number_input("日期", 1, 31, 13)
         
-        with col_input:
-            st.subheader("📍 擇日資訊檢查")
-            # 這裡我們調用 fengshui_lib 的功能
-            minguo_y = selected_date.year - 1911
-            st.write(f"當前查詢：民國 {minguo_y} 年 {selected_date.month} 月 {selected_date.day} 日")
+        # 使用五虎遁月計算該月天干
+        # 這裡需要傳入年干，假設我們從使用者輸入的年份推算年干 (簡化版)
+        year_gan_idx = (year - 4) % 10 # 簡單換算天干
+        year_gan = "甲乙丙丁戊己庚辛壬癸"[year_gan_idx]
+        
+        month_gan = GanZhi.get_month_gan(year_gan, month)
+        st.success(f"🗓️ {year}年 {month}月：該月干為 **{month_gan}**")
+
+    else: # 吉凶規律對照
+        st.subheader("🧭 仙命與擇日規律分析")
+        si_ming = st.selectbox("選擇亡者仙命：", list(BURIAL_RULES_60.keys()))
+        direction = st.selectbox("預計安葬坐向：", ["子", "午", "卯", "酉", "寅", "申", "辰", "戌", "巳", "亥", "丑", "未", "甲", "庚", "乙", "辛", "壬", "丙", "癸", "丁", "乾", "巽", "艮", "坤"])
+        
+        if st.button("🚀 執行規律匹配"):
+            # 調用引擎分析
+            result = burial_engine.get_suitability(si_ming, direction)
+            explanation = burial_engine.get_explanation(si_ming, direction)
             
-            # 未來規律分析的預留接口
-            if st.button("🚀 執行當日擇日分析", use_container_width=True):
-                # 這裡連結您未來要整理的「每日吉凶」資料庫
-                st.info("正在載入該日歲煞、彭祖百忌與宜忌數據...")
-                # 假設這裡呼叫了您定義的規律分析函式
-                st.write("結果顯示：該日宜安葬，方位吉凶檢測中...")
-
-    else:  # 按月份總覽
-        m_year = st.number_input("年份 (西元)", value=2026, key="tab5_year")
-        m_month = st.selectbox("月份", range(1, 13), key="tab5_month")
-        
-        if st.button("📊 產出該月吉凶月曆"):
-            st.write(f"正在分析 {m_year} 年 {m_month} 月的風水規律...")
-            # 這裡可以使用 dataframe 呈現該月每一天的「宜葬/忌葬」狀態
-            # 規律分析：哪幾天是「宜葬」且「不犯歲煞」的？
-            st.success("分析完成！已標記出該月之『安葬吉日』。")
+            if result == "宜":
+                st.success(f"✅ 判定為：{result}葬")
+            elif result == "忌":
+                st.error(f"❌ 判定為：{result}葬")
+            else:
+                st.info(f"⚪ 判定為：{result} (無特殊紀錄)")
+            
+            st.write(f"📋 斷語說明：{explanation['說明']}")
 
     st.markdown("---")
-    st.caption("💡 提示：本頁面運算邏輯採用五虎遁月與五鼠遁日，與您的風水規則庫連動。")
-
+    st.caption("💡 提示：本頁面已整合 `fengshui_lib` 引擎，將自動運算五虎遁月與規律斷語。")
 
 
