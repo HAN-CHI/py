@@ -1,6 +1,5 @@
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 import sxtwl
-
 # 初始化時憲曆引擎
 lunar_engine = sxtwl.Lunar()
 
