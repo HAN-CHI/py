@@ -5,6 +5,7 @@ import re
 from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
+from fengshui_lib import get_month_gan, get_hour_gan # 匯入剛寫好的函式
 
 
 # 設定網頁標題與圖示
@@ -121,13 +122,14 @@ def clean_and_parse_date(date_val):
     
 
 # ==========================================
-# 建立網頁分頁 (新增第四個分頁)
+# 建立網頁分頁 (新增分頁)
 # ==========================================
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1,tab2,tab3,tab4,tab5 = st.tabs([
     "📌 單日萬能查詢",
     "🕯️ 頭七/百日/對年計算機",
     "🦁 生肖與塔位吉方查詢",
     "🪦 土葬二十四山查詢"
+    "📅 萬年曆"
 ])
 
 # ==========================================
@@ -484,6 +486,10 @@ with tab4:
         st.error("❌ 忌葬六山")
         st.write(f"**方位**：{rule['忌']['方位']}")
         st.caption(f"說明：{rule['忌']['說明']}")
+
+# ==========================================
+# 🪦 新增分頁5：萬年曆
+# ==========================================
 
 
 
