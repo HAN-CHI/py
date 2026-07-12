@@ -49,14 +49,12 @@ class HuangDaoEngine:
 #五不遇時
 class TimeSafetyEngine:
     """處理時辰禁忌邏輯"""
-    
     # 五不遇時對照表 (日干: 禁忌時干)
     # 規律：陽日干剋陽時干，陰日干剋陰時干，相隔七位
     W_U_BUYU = {
         "甲": "庚", "乙": "辛", "丙": "壬", "丁": "癸", "戊": "甲",
         "己": "乙", "庚": "丙", "辛": "丁", "壬": "戊", "癸": "己"
     }
-
     @staticmethod
     def is_wubuyu(day_gan, hour_gan):
         """
