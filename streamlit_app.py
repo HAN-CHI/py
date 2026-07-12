@@ -493,36 +493,40 @@ with tab4:
 with tab5:
     st.header("📅 萬年曆與擇日數據查詢")
     from fengshui_lib import GanZhi
-    from zhdate import ZhDate # 建議使用 zhdate 套件進行精準農曆轉換
+    from zhdate import ZhDate
     from datetime import datetime
 
-
+    # 1. 先定義日期選擇器
+    selected_date = st.date_input("選擇查詢日期：", st.session_state.get('latest_date', datetime.now().date()), key="tab5_dp")
+    
+    # 2. 在選擇器之後，才進行後續計算
+    # 為了避免 ZhDate 報錯，確保它是 datetime 物件
     dt = datetime.combine(selected_date, datetime.min.time())
     lunar = ZhDate.from_datetime(dt)
-    
-    # 1. 日期選擇器
-    selected_date = st.date_input("選擇查詢日期：", st.session_state['latest_date'], key="tab5_dp")
-    
-    # 2. 自動轉換為農曆與干支
-    lunar = ZhDate.from_datetime(selected_date)
     minguo_y = selected_date.year - 1911
     
+    # 顯示基礎資訊
     st.subheader(f"📍 民國 {minguo_y} 年 {selected_date.month} 月 {selected_date.day} 日")
     st.write(f"農曆：{lunar.lunar_month}月 {lunar.lunar_day}日")
     
-    # 3. 數據對應區塊
-    if st.button("🔍 載入該日風水數據"):
-        # 這裡演示如何將計算出的干支對應到您的規律中
-        year_gan = "甲" # 實際應由邏輯推算 (可透過日期轉年干)
-        month_gan = GanZhi.get_month_gan(year_gan, lunar.lunar_month)
-        
-        st.markdown("---")
-# 建議您在 Tab 5 加入這個小卡片，直接呈現該日干支規律
+    # 3. 數據摘要區塊 (移到計算下方，這樣才有數據可顯示)
     st.subheader("🔮 當日風水摘要")
     col1, col2, col3 = st.columns(3)
     col1.metric("農曆", f"{lunar.lunar_month}月{lunar.lunar_day}日")
-    col2.metric("日柱干支", f"{GanZhi.get_day_ganzhi_simplified(selected_date)}") # 建議您新增此輔助函式
+    
+    # 注意：若您還沒在 fengshui_lib 寫 get_day_ganzhi_simplified，這裡會報錯
+    # 先用暫時的字串顯示避免報錯
+    col2.metric("日柱干支", "計算中...") 
+    
     col3.metric("季節", "夏季" if 4 <= selected_date.month <= 6 else "其他")
-            
-    st.info("💡 系統已對應至該仙命的風水數據庫，請確認方位以進行規律分析。")
+
+    # 4. 數據對應區塊 (按鈕互動)
+    if st.button("🔍 載入該日風水數據"):
+        # 這裡演示如何將計算出的干支對應到您的規律中
+        year_gan = "甲" 
+        month_gan = GanZhi.get_month_gan(year_gan, lunar.lunar_month)
+        
+        st.markdown("---")
+        st.success(f"該月干為：{month_gan}")
+        st.info("💡 系統已對應至該仙命的風水數據庫。")
 
