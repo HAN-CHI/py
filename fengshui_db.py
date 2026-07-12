@@ -1,6 +1,20 @@
-# calendar_db.py
-# 這是您的干支規則與神煞對應表
+# 基礎定義
+STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
 
+# 六十甲子完整序列 (這可以用程式產生，也可以直接存入備查)
+def generate_sixty_ganzhi():
+    gz_list = []
+    for i in range(60):
+        stem = STEMS[i % 10]
+        branch = BRANCHES[i % 12]
+        gz_list.append(stem + branch)
+    return gz_list
+
+SIXTY_GANZHI = generate_sixty_ganzhi()
+
+
+# 這是您的干支規則與神煞對應表
 CALENDAR_RULES = {
     "GanZhi": {
         "Stems": "甲乙丙丁戊己庚辛壬癸",
