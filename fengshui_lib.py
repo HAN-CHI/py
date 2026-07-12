@@ -3,6 +3,12 @@ class GanZhi:
     
     # 使用類別常數，方便日後維護
     STREAMS = "甲乙丙丁戊己庚辛壬癸"
+    BRANCHES = "子丑寅卯辰巳午未申酉戌亥"  # 增加地支常數
+
+    @classmethod
+    def get_full_ganzhi(cls, year: int, month: int, day: int, hour: int) -> str:
+        """未來可整合此處計算完整四柱"""
+        pass
     
     @classmethod
     def _stem_to_idx(cls, stem: str) -> int:
