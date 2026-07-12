@@ -1,4 +1,5 @@
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
+from zhdate import ZhDate
 from datetime import datetime
 
 class PreciseCalendar:
@@ -29,13 +30,17 @@ class PreciseCalendar:
         start_hour_gan_idx = (day_gan_idx % 5) * 2
         hour_idx = (start_hour_gan_idx + (hour // 2)) % 10
         hour_gz = PreciseCalendar.STEMS[hour_idx] + PreciseCalendar.BRANCHES[(hour // 2) % 12]
+        
+        # 新增：轉換為農曆
+        lunar = ZhDate.from_datetime(datetime(year, month, day))
 
         return {
             "年柱": year_gz,
             "日柱": day_gz,
             "時柱": hour_gz,
             "月柱": "註：需配合節氣計算", # 若需要精準月柱，建議改用查詢表
-            "農曆": "請參考 zhdate 顯示"
+            "農曆": f"農曆 {lunar.lunar_month}月{lunar.lunar_day}日",
+            "農曆字串": f"{lunar.chinese()}" # 例如：二〇二六年六月十九
         }
 
 class CalendarEngine:
