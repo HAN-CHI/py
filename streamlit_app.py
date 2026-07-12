@@ -494,6 +494,11 @@ with tab5:
     st.header("📅 萬年曆與擇日數據查詢")
     from fengshui_lib import GanZhi
     from zhdate import ZhDate # 建議使用 zhdate 套件進行精準農曆轉換
+    from datetime import datetime
+
+
+    dt = datetime.combine(selected_date, datetime.min.time())
+    lunar = ZhDate.from_datetime(dt)
     
     # 1. 日期選擇器
     selected_date = st.date_input("選擇查詢日期：", st.session_state['latest_date'], key="tab5_dp")
