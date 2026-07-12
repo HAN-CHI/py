@@ -491,5 +491,51 @@ with tab4:
 # ==========================================
 # 🪦 新增分頁5：萬年曆
 # ==========================================
+with tab5:
+    st.header("📅 擇日分析控制台")
+    from fengshui_lib import PreciseCalendar, TimeSafetyEngine
+    from fengshui_db import PENGZU_STEMS, PENGZU_BRANCHES, GZ_RECORDS
 
+    # 1. 介面輸入
+    col_date, col_hour = st.columns(2)
+    with col_date:
+        selected_date = st.date_input("選擇日期", st.session_state.get('latest_date', datetime.now().date()))
+    with col_hour:
+        selected_hour = st.slider("選擇時辰 (小時)", 0, 23, 12)
+
+    # 2. 核心運算
+    pillars = PreciseCalendar.get_four_pillars(selected_date.year, selected_date.month, selected_date.day, selected_hour)
+    
+    # 顯示四柱
+    st.subheader("🔮 當日四柱結構")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("年柱", pillars["年柱"])
+    c2.metric("月柱", pillars["月柱"])
+    c3.metric("日柱", pillars["日柱"])
+    c4.metric("時柱", pillars["時柱"])
+
+    # 3. 禁忌與斷語分析
+    st.markdown("---")
+    st.subheader("📋 擇日深度診斷")
+    
+    # 彭祖百忌分析
+    day_gan = pillars["日柱"][0]
+    day_zhi = pillars["日柱"][1]
+    
+    with st.expander("⚠️ 彭祖百忌叮嚀"):
+        st.write(f"天干({day_gan})：{PENGZU_STEMS.get(day_gan)}")
+        st.write(f"地支({day_zhi})：{PENGZU_BRANCHES.get(day_zhi)}")
+
+    # 五不遇時分析
+    hour_gan = pillars["時柱"][0]
+    _, is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, selected_hour // 2)
+    if is_unsafe:
+        st.error(f"❌ 當前時辰 ({hour_gan}時) 為『五不遇時』，傳統擇日建議避開！")
+    else:
+        st.success(f"✅ 當前時辰 ({hour_gan}時) 非五不遇時。")
+
+    # 六十甲子斷語
+    day_gz = pillars["日柱"]
+    record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
+    st.info(f"**日課吉凶：{record['吉凶']}** | {record['斷語']}")
 
