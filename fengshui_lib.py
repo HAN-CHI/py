@@ -13,10 +13,13 @@ class CalendarEngine:
         """根據與基點日期的天數差，推算二十八宿"""
         return CALENDAR_RULES["Constellations"]["sequence"][date_delta % 28]
 
-class PengZuEngine:
-    @staticmethod
-    def get_taboo(gan, zhi):
-        """輸入日干與日支，返回彭祖百忌說明"""
-        stem_taboo = PENGZU_STEMS.get(gan, "")
-        branch_taboo = PENGZU_BRANCHES.get(zhi, "")
-        return [stem_taboo, branch_taboo]
+def get_today_pengzu(gan, zhi):
+    """
+    根據當日干支，返回對應的百忌說明。
+    gan: 天干字串 (如 '甲')
+    zhi: 地支字串 (如 '子')
+    """
+    return {
+        "天干百忌": PENGZU_STEMS.get(gan, "今日天干無特殊禁忌。"),
+        "地支百忌": PENGZU_BRANCHES.get(zhi, "今日地支無特殊禁忌。")
+    }
