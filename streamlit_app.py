@@ -523,18 +523,20 @@ with tab5:
     day_zhi = pillars["日柱"][1]
     
     with st.expander("⚠️ 彭祖百忌叮嚀"):
-        st.write(f"天干({day_gan})：{PENGZU_STEMS.get(day_gan)}")
-        st.write(f"地支({day_zhi})：{PENGZU_BRANCHES.get(day_zhi)}")
+        st.write(f"天干({day_gan})：{PENGZU_STEMS.get(day_gan, '無紀錄')}")
+        st.write(f"地支({day_zhi})：{PENGZU_BRANCHES.get(day_zhi, '無紀錄')}")
 
-    # 五不遇時分析
-    hour_gan = pillars["時柱"][0]
-    is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, selected_hour // 2)
+    # 五不遇時分析 (重點修正：正確解開 Tuple)
+    hour_idx = selected_hour // 2
+    hour_gan_calculated, is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, hour_idx)
+    
     if is_unsafe:
-        st.error(f"❌ 當前時辰 ({hour_gan}時) 為『五不遇時』，傳統擇日建議避開！")
+        st.error(f"❌ 當前時辰 ({hour_gan_calculated}時) 為『五不遇時』，傳統擇日建議避開！")
     else:
-        st.success(f"✅ 當前時辰 ({hour_gan}時) 非五不遇時。")
+        st.success(f"✅ 當前時辰 ({hour_gan_calculated}時) 非五不遇時。")
 
-    # 六十甲子斷語
+    # 六十甲子斷語 (確保 GZ_RECORDS 已被正確 import)
     day_gz = pillars["日柱"]
+    # 這裡確保您的 fengshui_db 中有定義 GZ_RECORDS
     record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
-    st.info(f"**日課吉凶：{record['吉凶']}** | {record['斷語']}")
+    st.info(f"**日課吉凶：{record.get('吉凶', '平')}** | {record.get('斷語', '無紀錄')}")
