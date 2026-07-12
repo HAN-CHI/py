@@ -543,4 +543,4 @@ with tab5:
     day_gz = pillars["日柱"]
     # 這裡確保您的 fengshui_db 中有定義 GZ_RECORDS
     #record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
-    st.info(f"**日課吉凶：{record.get('吉凶', '平')}** | {record.get('斷語', '無紀錄')}")
+    #st.info(f"**日課吉凶：{record.get('吉凶', '平')}** | {record.get('斷語', '無紀錄')}")
