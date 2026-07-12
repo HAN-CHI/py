@@ -7,7 +7,9 @@ import importlib
 from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
-from fengshui_lib import PreciseCalendar, TimeSafetyEngine
+importlib.reload(fengshui_lib)
+from fengshui_lib import TimeSafetyEngine
+from fengshui_lib import PreciseCalendar
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 #from fengshui_lib import FengShuiEngine
 
