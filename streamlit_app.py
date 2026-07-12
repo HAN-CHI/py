@@ -542,5 +542,5 @@ with tab5:
     # 六十甲子斷語 (確保 GZ_RECORDS 已被正確 import)
     day_gz = pillars["日柱"]
     # 這裡確保您的 fengshui_db 中有定義 GZ_RECORDS
-    record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
+    #record = GZ_RECORDS.get(day_gz, {"吉凶": "平", "斷語": "無特別紀錄"})
     st.info(f"**日課吉凶：{record.get('吉凶', '平')}** | {record.get('斷語', '無紀錄')}")
