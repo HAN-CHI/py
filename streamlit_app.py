@@ -524,5 +524,5 @@ with tab5:
     col2.metric("日柱干支", f"{GanZhi.get_day_ganzhi_simplified(selected_date)}") # 建議您新增此輔助函式
     col3.metric("季節", "夏季" if 4 <= selected_date.month <= 6 else "其他")
             
-        st.info("💡 系統已對應至該仙命的風水數據庫，請確認方位以進行規律分析。")
+    st.info("💡 系統已對應至該仙命的風水數據庫，請確認方位以進行規律分析。")
 
