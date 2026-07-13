@@ -534,13 +534,6 @@ with tab5:
         is_lucky = "吉" in god_info["屬性"]
         # 在 metric 中顯示名稱與屬性
         col_g1.metric(label="當前值神", value=god_name)
-
-    
-    god_name, god_luck = HuangDaoEngine.get_hour_god(day_zhi, hour_idx)
-    if god_luck == "吉":
-        st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
-    else:
-        st.warning(f"該時辰為【{god_name}】，屬於「黑道凶時」。")
     
 
     # 3. 禁忌與斷語分析
