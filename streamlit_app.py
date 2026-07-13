@@ -533,7 +533,6 @@ with tab5:
 
     # 五不遇時分析 (重點修正：正確解開 Tuple)
     hour_idx = selected_hour // 2
-    st.write(f"DEBUG: TimeSafetyEngine 是否有 check_hour_safety? {hasattr(TimeSafetyEngine, 'check_hour_safety')}")
     hour_gan_calculated, is_unsafe = TimeSafetyEngine.check_hour_safety(day_gan, hour_idx)
     
     if is_unsafe:
