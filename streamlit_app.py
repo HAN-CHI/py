@@ -8,8 +8,7 @@ from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
 importlib.reload(fengshui_lib)
-from fengshui_lib import TimeSafetyEngine, TimeEngine
-from fengshui_lib import PreciseCalendar
+from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 #from fengshui_lib import FengShuiEngine
 
@@ -518,6 +517,18 @@ with tab5:
     c2.metric("月柱", pillars["月柱"])
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
+
+    st.markdown("---")
+    # 獲取黃道資訊
+    god_name, god_luck = HuangDaoEngine.get_hour_god(day_zhi, hour_idx)
+
+    # 顯示在 UI 上
+    st.subheader("🌟 時辰黃道神煞")
+    if god_luck == "吉":
+    st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
+    else:
+    st.warning(f"該時辰為【{god_name}】，屬於「黑道凶時」。")
+    
 
     # 3. 禁忌與斷語分析
     st.markdown("---")
