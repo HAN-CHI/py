@@ -518,10 +518,25 @@ with tab5:
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
 
+
+    # --- 新增：黃道十二神煞分析 ---
     st.markdown("---")
-    # 獲取黃道資訊
-    god_name, god_luck = HuangDaoEngine.get_hour_god(day_zhi, hour_idx)
     st.subheader("🌟 時辰黃道神煞")
+    # 取得當日地支與時辰索引
+    day_zhi = pillars["日柱"][1] # 取得日柱的第二個字，例如 '子'
+    hour_idx = selected_hour // 2
+    # 呼叫運算引擎 (確保 fengshui_lib 已匯入 HuangDaoEngine)
+    god_name, god_info = HuangDaoEngine.get_hour_god_info(day_zhi, hour_idx)
+    # 使用 container 展示資訊
+    with st.container(border=True):
+        col_g1, col_g2 = st.columns([1, 3])
+        # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
+        is_lucky = "吉" in god_info["屬性"]
+        # 在 metric 中顯示名稱與屬性
+        col_g1.metric(label="當前值神", value=god_name)
+
+    
+    god_name, god_luck = HuangDaoEngine.get_hour_god(day_zhi, hour_idx)
     if god_luck == "吉":
         st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
     else:
