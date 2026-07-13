@@ -521,8 +521,6 @@ with tab5:
     st.markdown("---")
     # 獲取黃道資訊
     god_name, god_luck = HuangDaoEngine.get_hour_god(day_zhi, hour_idx)
-
-    # 顯示在 UI 上
     st.subheader("🌟 時辰黃道神煞")
     if god_luck == "吉":
         st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
