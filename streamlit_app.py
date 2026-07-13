@@ -525,9 +525,9 @@ with tab5:
     # 顯示在 UI 上
     st.subheader("🌟 時辰黃道神煞")
     if god_luck == "吉":
-    st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
+        st.success(f"該時辰為【{god_name}】，屬於「黃道吉時」。")
     else:
-    st.warning(f"該時辰為【{god_name}】，屬於「黑道凶時」。")
+        st.warning(f"該時辰為【{god_name}】，屬於「黑道凶時」。")
     
 
     # 3. 禁忌與斷語分析
