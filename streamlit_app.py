@@ -527,13 +527,23 @@ with tab5:
     hour_idx = selected_hour // 2
     # 呼叫運算引擎 (確保 fengshui_lib 已匯入 HuangDaoEngine)
     god_name, god_info = HuangDaoEngine.get_hour_god_info(day_zhi, hour_idx)
-    # 使用 container 展示資訊
+# 使用 container 展示資訊
     with st.container(border=True):
         col_g1, col_g2 = st.columns([1, 3])
+        
         # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
         is_lucky = "吉" in god_info["屬性"]
+        
         # 在 metric 中顯示名稱與屬性
         col_g1.metric(label="當前值神", value=god_name)
+        col_g1.caption(god_info["屬性"])
+        
+        # 在右側顯示建議
+        col_g2.write(f"**💡 擇日建議：**")
+        if is_lucky:
+            col_g2.success(god_info['適用'])
+        else:
+            col_g2.error(god_info['適用'])
     
 
     # 3. 禁忌與斷語分析
