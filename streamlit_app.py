@@ -545,8 +545,9 @@ with tab5:
             col_g2.success(god_info['適用'])
         else:
             col_g2.error(god_info['適用'])
-    # 計算值神
     
+    
+    # 計算值神
     st.markdown("---")
     st.subheader("🏛️ 今日值日神煞")
     # 正確讀取方式：
@@ -558,10 +559,6 @@ with tab5:
     col_d1, col_d2 = st.columns([1, 3])
     col_d1.metric("當日神煞", daily_god)
     col_d2.info(f"根據農曆 {lunar_month} 月推算，今日為【{daily_god}】值日。")
-
-
-# 現在您可以順利呼叫神煞計算了
-daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
 
     # 3. 禁忌與斷語分析
     st.markdown("---")
