@@ -41,8 +41,8 @@ class PreciseCalendar:
             "月柱": "註：需配合節氣計算", # 若需要精準月柱，建議改用查詢表
             "農曆": f"農曆 {lunar.lunar_month}月{lunar.lunar_day}日",
             "農曆字串": f"{lunar.chinese()}" # 例如：二〇二六年六月十九
-            "lunar_obj": lunar,  # <--- 把物件傳出去
-            "lunar_month": lunar.lunar_month # <--- 方便直接讀取月份
+            "lunar_month": lunar.month, # 確保這裡是一個數字
+            "lunar_obj": lunar  # 確保這是最後一行，後面不要有多餘的字元
         }
 
 class CalendarEngine:
