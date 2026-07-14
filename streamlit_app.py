@@ -504,10 +504,9 @@ with tab5:
     with col_hour:
         selected_hour = st.slider("選擇時辰 (小時)", 0, 23, 12)
 
-    # 2. 核心運算
+   # 2. 核心運算
     pillars = PreciseCalendar.get_four_pillars(selected_date.year, selected_date.month, selected_date.day, selected_hour)
-    
-    
+
     # 顯示四柱
     st.subheader("🔮 當日四柱結構")
     # 這裡顯示農曆，放在最上方非常直觀
@@ -517,19 +516,27 @@ with tab5:
     c2.metric("月柱", pillars["月柱"])
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
-    
+
+
+    # --- 新增：黃道十二神煞分析 ---
+    st.markdown("---")
+    st.subheader("🌟 時辰黃道神煞")
     # 取得當日地支與時辰索引
     day_zhi = pillars["日柱"][1] # 取得日柱的第二個字，例如 '子'
     hour_idx = selected_hour // 2
-    # 使用 container 展示資訊
+    # 呼叫運算引擎 (確保 fengshui_lib 已匯入 HuangDaoEngine)
+    god_name, god_info = HuangDaoEngine.get_hour_god_info(day_zhi, hour_idx)
+# 使用 container 展示資訊
     with st.container(border=True):
         col_g1, col_g2 = st.columns([1, 3])
-    # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
-    is_lucky = "吉" in god_info["屬性"]
+
+        # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
+        is_lucky = "吉" in god_info["屬性"]
+
         # 在 metric 中顯示名稱與屬性
         col_g1.metric(label="當前值神", value=god_name)
         col_g1.caption(god_info["屬性"])
-        
+
         # 在右側顯示建議
         col_g2.write(f"**💡 擇日建議：**")
         if is_lucky:
