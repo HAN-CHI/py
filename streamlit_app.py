@@ -508,6 +508,7 @@ with tab5:
     # 2. 核心運算
     pillars = PreciseCalendar.get_four_pillars(selected_date.year, selected_date.month, selected_date.day, selected_hour)
     
+    
     # 顯示四柱
     st.subheader("🔮 當日四柱結構")
     # 這裡顯示農曆，放在最上方非常直觀
@@ -548,15 +549,19 @@ with tab5:
     
     st.markdown("---")
     st.subheader("🏛️ 今日值日神煞")
-    lunar_month = lunar.lunar_month 
+    # 正確讀取方式：
+    lunar_month = pillars["lunar_month"] # 從字典取出
     day_zhi = pillars["日柱"][1]
-    
+    # 現在您可以順利呼叫神煞計算了
     daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
     st.write(f"今日為【{daily_god}】日。")
     col_d1, col_d2 = st.columns([1, 3])
     col_d1.metric("當日神煞", daily_god)
     col_d2.info(f"根據農曆 {lunar_month} 月推算，今日為【{daily_god}】值日。")
-    
+
+
+# 現在您可以順利呼叫神煞計算了
+daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
 
     # 3. 禁忌與斷語分析
     st.markdown("---")
