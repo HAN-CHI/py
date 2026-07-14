@@ -517,9 +517,8 @@ with tab5:
     c2.metric("月柱", pillars["月柱"])
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
-
     # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
-    is_lucky = "吉" in god_info["屬性"]   
+    is_lucky = "吉" in god_info["屬性"]
     # 在 metric 中顯示名稱與屬性
     col_g1.metric(label="當前值神", value=god_name)
     col_g1.caption(god_info["屬性"])
