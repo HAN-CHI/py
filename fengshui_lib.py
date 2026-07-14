@@ -1,4 +1,4 @@
-from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
+from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES,HUANGDAO_DAILY_SEQUENCE,MONTH_START_BRANCH_IDX
 from zhdate import ZhDate
 from datetime import datetime
 
@@ -82,6 +82,31 @@ class HuangDaoEngine:
         god_info = HUANGDAO_GODS.get(god_name) # 包含屬性與適用範疇
         
         return god_name, god_info
+        # fengshui_lib.py
+
+class DailyHuangDaoEngine:
+    BRANCHES = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+    
+    @staticmethod
+    def get_daily_god(month, day_branch):
+        """
+        month: 農曆月份 (1-12)
+        day_branch: 當日地支 (如 '子')
+        """
+        # 1. 取得該月份青龍起始的地支索引
+        start_branch_idx = MONTH_START_BRANCH_IDX.get(month)
+        
+        # 2. 取得當日地支的索引
+        current_day_branch_idx = DailyHuangDaoEngine.BRANCHES.index(day_branch)
+        
+        # 3. 計算位移 (處理負數與循環：(目標 - 起始) % 12)
+        # 這是擇日學的核心邏輯：從青龍起始點開始推演
+        offset = (current_day_branch_idx - start_branch_idx) % 12
+        
+        # 4. 根據位移回傳對應的神煞
+        god_name = HUANGDAO_DAILY_SEQUENCE[offset]
+        
+        return god_name
 
 
 #五不遇時
