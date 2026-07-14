@@ -547,10 +547,15 @@ with tab5:
     # 計算值神
     
     st.markdown("---")
-    st.subheader("🏛️ 當日黃道值日")
+    st.subheader("🏛️ 今日值日神煞")
+    lunar_month = lunar.lunar_month 
+    day_zhi = pillars["日柱"][1]
+    
     daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
     st.write(f"今日為【{daily_god}】日。")
-
+    col_d1, col_d2 = st.columns([1, 3])
+    col_d1.metric("當日神煞", daily_god)
+    col_d2.info(f"根據農曆 {lunar_month} 月推算，今日為【{daily_god}】值日。")
     
 
     # 3. 禁忌與斷語分析
