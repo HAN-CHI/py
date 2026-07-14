@@ -517,46 +517,20 @@ with tab5:
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
 
-
-    # --- 新增：黃道十二神煞分析 ---
-    st.markdown("---")
-    st.subheader("🌟 時辰黃道神煞")
-    # 取得當日地支與時辰索引
-    day_zhi = pillars["日柱"][1] # 取得日柱的第二個字，例如 '子'
-    hour_idx = selected_hour // 2
-    # 呼叫運算引擎 (確保 fengshui_lib 已匯入 HuangDaoEngine)
-    god_name, god_info = HuangDaoEngine.get_hour_god_info(day_zhi, hour_idx)
-# 使用 container 展示資訊
-    with st.container(border=True):
-        col_g1, col_g2 = st.columns([1, 3])
+    # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
+    is_lucky = "吉" in god_info["屬性"]   
+    # 在 metric 中顯示名稱與屬性
+    col_g1.metric(label="當前值神", value=god_name)
+    col_g1.caption(god_info["屬性"])
         
-        # 判斷顏色：如果是黃道吉，用綠色；黑道凶，用紅色
-        is_lucky = "吉" in god_info["屬性"]
-        
-        # 在 metric 中顯示名稱與屬性
-        col_g1.metric(label="當前值神", value=god_name)
-        col_g1.caption(god_info["屬性"])
-        
-        # 在右側顯示建議
-        col_g2.write(f"**💡 擇日建議：**")
-        if is_lucky:
-            col_g2.success(god_info['適用'])
-        else:
-            col_g2.error(god_info['適用'])
+    # 在右側顯示建議
+    col_g2.write(f"**💡 擇日建議：**")
+    if is_lucky:
+        col_g2.success(god_info['適用'])
+    else:
+        col_g2.error(god_info['適用'])
     
     
-    # 計算值神
-    st.markdown("---")
-    st.subheader("🏛️ 今日值日神煞")
-    # 正確讀取方式：
-    lunar_month = pillars["lunar_month"] # 從字典取出
-    day_zhi = pillars["日柱"][1]
-    # 現在您可以順利呼叫神煞計算了
-    daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
-    st.write(f"今日為【{daily_god}】日。")
-    col_d1, col_d2 = st.columns([1, 3])
-    col_d1.metric("當日神煞", daily_god)
-    col_d2.info(f"根據農曆 {lunar_month} 月推算，今日為【{daily_god}】值日。")
 
     # 3. 禁忌與斷語分析
     st.markdown("---")
