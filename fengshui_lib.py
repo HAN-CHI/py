@@ -36,9 +36,9 @@ class PreciseCalendar:
 
         return {
             "年柱": year_gz,
+            "月柱": "（需配合節氣）",
             "日柱": day_gz,
             "時柱": hour_gz,
-            "月柱": "註：需配合節氣計算", # 若需要精準月柱，建議改用查詢表
             "農曆": f"農曆 {lunar.lunar_month}月{lunar.lunar_day}日",
             "農曆字串": f"{lunar.chinese()}" # 例如：二〇二六年六月十九
         }
