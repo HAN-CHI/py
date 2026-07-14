@@ -544,12 +544,13 @@ with tab5:
             col_g2.success(god_info['適用'])
         else:
             col_g2.error(god_info['適用'])
-
     # 計算值神
-    daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
-
+    
+    st.markdown("---")
     st.subheader("🏛️ 當日黃道值日")
+    daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
     st.write(f"今日為【{daily_god}】日。")
+
     
 
     # 3. 禁忌與斷語分析
