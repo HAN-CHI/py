@@ -8,7 +8,7 @@ from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
 importlib.reload(fengshui_lib)
-from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine
+from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine,DailyHuangDaoEngine
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 #from fengshui_lib import FengShuiEngine
 
@@ -544,6 +544,12 @@ with tab5:
             col_g2.success(god_info['適用'])
         else:
             col_g2.error(god_info['適用'])
+
+    # 計算值神
+    daily_god = DailyHuangDaoEngine.get_daily_god(lunar_month, day_zhi)
+
+    st.subheader("🏛️ 當日黃道值日")
+    st.write(f"今日為【{daily_god}】日。")
     
 
     # 3. 禁忌與斷語分析
