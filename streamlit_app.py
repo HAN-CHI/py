@@ -517,8 +517,15 @@ with tab5:
     c2.metric("月柱", pillars["月柱"])
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
+# 取得當日地支與時辰索引
+    day_zhi = pillars["日柱"][1] # 取得日柱的第二個字，例如 '子'
+    hour_idx = selected_hour // 2
     
-# 使用 container 展示資訊
+    # 呼叫運算引擎 (確保 fengshui_lib 已匯入 HuangDaoEngine)
+    from fengshui_lib import HuangDaoEngine
+    
+
+    # 使用 container 展示資訊
     with st.container(border=True):
         col_g1, col_g2 = st.columns([1, 3])
         
