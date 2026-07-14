@@ -97,7 +97,7 @@ class DailyHuangDaoEngine:
         start_branch_idx = MONTH_START_BRANCH_IDX.get(month)
         
         # 2. 取得當日地支的索引
-        current_day_branch_idx = DailyHuangDaoEngine.BRANCHES.index(day_branch)
+        current_idx = DailyHuangDaoEngine.BRANCHES.index(day_branch)
         
         # 3. 計算位移 (處理負數與循環：(目標 - 起始) % 12)
         # 這是擇日學的核心邏輯：從青龍起始點開始推演
