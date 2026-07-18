@@ -233,9 +233,6 @@ with tab2:
     with col_l:
         death_date_input = st.date_input("選擇往生日期：", st.session_state['latest_date'], key="tab3_dp")
 
-    with col_r:
-        if has_cross_leap:
-            st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
     
     if st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run"):
         st.session_state['latest_date'] = death_date_input
