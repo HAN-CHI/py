@@ -264,7 +264,7 @@ with tab2:
     if st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run"):
         st.session_state['latest_date'] = death_date_input
         
-    if final_calc_date:
+        final_calc_date = st.session_state['latest_date']
         p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
         week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
         
