@@ -430,7 +430,7 @@ with tab5:
     st.info(f"📅 **農曆日期：** {pillars['農曆']} ({pillars['農曆字串']})")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("年柱", pillars["年柱"])
-    c2.metric("月柱", month_val["月柱"])
+    c2.metric("月柱", pillars["月柱"])
     c3.metric("日柱", pillars["日柱"])
     c4.metric("時柱", pillars["時柱"])
 
