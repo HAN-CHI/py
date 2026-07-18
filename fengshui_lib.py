@@ -147,43 +147,62 @@ class TimeSafetyEngine:
 
 #天文觀測資料計算
 class AstronomyEngine:
-    # 太陽黃經從 0 度（春分）開始，每 15 度為一個節氣
-    SOLAR_TERMS = [
-        "春分", "清明", "穀雨", "立夏", "小滿", "芒種",
-        "夏至", "小暑", "大暑", "立秋", "處暑", "白露",
-        "秋分", "寒露", "霜降", "立冬", "小雪", "大雪",
-        "冬至", "小寒", "大寒", "立春", "雨水", "驚蟄"
-    ]
-    @staticmethod
-    def get_solar_details(local_date, local_hour, year_gz, day_gz, lat=24.16, lon=120.64):
-        # 1. 時間基礎計算 (與原本相同)
-        local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
-        utc_dt = local_dt - timedelta(hours=8)
-        y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
-        h, mn, s = utc_dt.hour, utc_dt.minute, utc_dt.second
-        if m <= 2: y -= 1; m += 12
-        A = int(y / 100); B = 2 - A + int(A / 4)
-        jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (h + mn/60.0 + s/3600.0)/24.0
+    # 節氣定義對照表 (黃經角度)
+    TERMS_MAP = {
+        "立春": 315, "雨水": 330, "驚蟄": 345, "春分": 0, "清明": 15, "穀雨": 30,
+        "立夏": 45, "小滿": 60, "芒種": 75, "夏至": 90, "小暑": 105, "大暑": 120,
+        "立秋": 135, "處暑": 150, "白露": 165, "秋分": 180, "寒露": 195, "霜降": 210,
+        "立冬": 225, "小雪": 240, "大雪": 255, "冬至": 270, "小寒": 285, "大寒": 300
+    }
 
-        # 2. 精確黃經計算
+    @staticmethod
+    def get_ecliptic_longitude(jd):
         n = jd - 2451545.0
         L = (280.460 + 0.9856474 * n) % 360
         g = (357.528 + 0.9856003 * n) % 360
         g_rad = math.radians(g)
-        ecliptic_longitude = (L + 1.915 * math.sin(g_rad) + 0.020 * math.sin(2 * g_rad)) % 360
+        return (L + 1.915 * math.sin(g_rad) + 0.020 * math.sin(2 * g_rad)) % 360
 
-        # 3. 節氣判定 (使用黃經區間法，精確對應傳統曆法)
-        terms = [
-            (315, 330, "立春"), (330, 345, "雨水"), (345, 360, "驚蟄"), (0, 15, "春分"),
-            (15, 30, "清明"), (30, 45, "穀雨"), (45, 60, "立夏"), (60, 75, "小滿"),
-            (75, 90, "芒種"), (90, 105, "夏至"), (105, 120, "小暑"), (120, 135, "大暑"),
-            (135, 150, "立秋"), (150, 165, "處暑"), (165, 180, "白露"), (180, 195, "秋分"),
-            (195, 210, "寒露"), (210, 225, "霜降"), (225, 240, "立冬"), (240, 255, "小雪"),
-            (255, 270, "大雪"), (270, 285, "冬至"), (285, 300, "小寒"), (300, 315, "大寒")
-        ]
-        solar_term = next((name for start, end, name in terms if start <= ecliptic_longitude < end), "未知")
+    @staticmethod
+    def find_term_time(target_date, target_term_name):
+        """ 使用二分搜尋法查找節氣交節精確時間 """
+        target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
+        low = datetime.combine(target_date, datetime.min.time()) - timedelta(days=2)
+        high = datetime.combine(target_date, datetime.min.time()) + timedelta(days=2)
+        
+        for _ in range(20): # 20次迭代可達分鐘級精度
+            mid = low + (high - low) / 2
+            # 轉換為儒略日計算
+            y, m, d = mid.year, mid.month, mid.day
+            if m <= 2: y -= 1; m += 12
+            A = int(y / 100); B = 2 - A + int(A / 4)
+            jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (mid.hour + mid.minute/60.0)/24.0
+            
+            if AstronomyEngine.get_ecliptic_longitude(jd) < target_lon:
+                low = mid
+            else:
+                high = mid
+        return mid.strftime("%m-%d %H:%M")
 
-        # 4. 節氣定月柱 (精確對照表)
+    @staticmethod
+    def get_solar_details(local_date, local_hour, year_gz, day_gz, lat=24.16, lon=120.64):
+        # 基礎時間運算
+        local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
+        utc_dt = local_dt - timedelta(hours=8)
+        y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
+        jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
+        
+        # 黃經與節氣
+        lon_deg = AstronomyEngine.get_ecliptic_longitude(jd)
+        terms = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
+        solar_term = "未知"
+        for i in range(len(terms)):
+            start, end = terms[i][1], terms[(i+1)%24][1]
+            if start <= lon_deg < (end if end > start else end + 360):
+                solar_term = terms[i][0]
+                break
+        
+        # 月柱計算
         term_to_month_zhi = {
             "立春":"寅", "雨水":"寅", "驚蟄":"卯", "春分":"卯", "清明":"辰", "穀雨":"辰",
             "立夏":"巳", "小滿":"巳", "芒種":"午", "夏至":"午", "小暑":"未", "大暑":"未",
@@ -191,8 +210,6 @@ class AstronomyEngine:
             "立冬":"亥", "小雪":"亥", "大雪":"子", "冬至":"子", "小寒":"丑", "大寒":"丑"
         }
         month_zhi = term_to_month_zhi.get(solar_term, "巳")
-        
-        # 5. 五虎遁起月干 (丙年正月為庚寅)
         stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
         branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
         year_gan_idx = stems.index(year_gz[0])
@@ -200,15 +217,12 @@ class AstronomyEngine:
         month_gan_idx = (first_month_gan_idx + branches.index(month_zhi) - 2) % 10
         month_gz = stems[month_gan_idx] + month_zhi
 
-        # 6. 其他參數計算 (均時差、太陽高度角) 保持不變...
-        # (這裡省略與原本相同的後續計算，保持您原有的功能即可)
-        
+        # 輸出 JSON 規格
         return {
             "solar_term": solar_term,
+            "solar_term_time": AstronomyEngine.find_term_time(local_date, solar_term),
             "julian_day": round(jd, 5),
-            "ecliptic_longitude": round(ecliptic_longitude, 1),
+            "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "local_timezone": "UTC+8",
             "gan_zhi": f"{year_gz}年 {month_gz}月 {day_gz}日"
-            # ... 其餘欄位
         }
