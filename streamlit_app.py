@@ -496,10 +496,10 @@ with tab5:
             col_start, col_end = st.columns(2)
             # 使用 .get() 確保如果尚未計算出範圍，顯示 N/A 而非報錯
             col_start.write("節氣起始 (國曆)")
-            col_start.code(astronomy_data.get("term_start", "2026-05-21 08:36")) 
+            col_start.code(astronomy_data.get("term_start", "計算中...")) 
             
             col_end.write("節氣終止 (國曆)")
-            col_end.code(astronomy_data.get("term_end", "2026-06-05 23:48"))
+            col_end.code(astronomy_data.get("term_end", "計算中..."))
             
             st.info(f"當前日期落在 {astronomy_data.get('solar_term')} 節氣區間內")
 
