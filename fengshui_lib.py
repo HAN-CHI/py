@@ -102,7 +102,8 @@ class DailyHuangDaoEngine:
         
         # 3. 計算位移 (處理負數與循環：(目標 - 起始) % 12)
         # 這是擇日學的核心邏輯：從青龍起始點開始推演
-        offset = (current_day_branch_idx - start_branch_idx) % 12
+        #offset = (current_day_branch_idx - start_branch_idx) % 12
+        offset = (current_idx - start_branch_idx) % 12
         
         # 4. 根據位移回傳對應的神煞
         god_name = HUANGDAO_DAILY_SEQUENCE[offset]
