@@ -492,16 +492,9 @@ with tab5:
         c1.metric("年柱", year_val)
         c2.metric("月柱", month_val)
         c3.metric("日柱", day_val)
-        c4.metric("節氣", astronomy_data["solar_term"])
-        with st.expander(f"節氣詳細資訊：{astronomy_data['solar_term']}"):
-            st.write(f"**{astronomy_data['solar_term']}** 交節氣時間表：")
-        
-        # 使用欄位並排顯示開始與結束時間
-            col_start, col_end = st.columns(2)
-            col_start.metric("開始時間 (國曆)", astronomy_data["term_start"])
-            col_end.metric("結束時間 (國曆)", astronomy_data["term_end"])
-        
-            st.info(f"當前時間處於 {astronomy_data['solar_term']} 區間內")
+        with c4:
+            st.metric("節氣", astronomy_data["solar_term"])
+            st.caption(f"交節時間: {astronomy_data.get('solar_term_time', '計算中...')}")
     
     # 顯示詳細數據 (新增 .get() 確保如果欄位缺失不會報錯)
     with st.expander("查看詳細天文數據"):
