@@ -144,7 +144,16 @@ class TimeSafetyEngine:
         hour_gan = TimeEngine.get_hour_gan(day_gan, hour_idx)
         is_unsafe = TimeSafetyEngine.is_wubuyu(day_gan, hour_gan)
         return hour_gan, is_unsafe
-        
+
+#天文觀測資料計算
+class AstronomyEngine:
+    # 太陽黃經從 0 度（春分）開始，每 15 度為一個節氣
+    SOLAR_TERMS = [
+        "春分", "清明", "穀雨", "立夏", "小滿", "芒種",
+        "夏至", "小暑", "大暑", "立秋", "處暑", "白露",
+        "秋分", "寒露", "霜降", "立冬", "小雪", "大雪",
+        "冬至", "小寒", "大寒", "立春", "雨水", "驚蟄"
+    ]
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz, lat=24.16, lon=120.64):
         # 1. 時間基礎計算 (與原本相同)
