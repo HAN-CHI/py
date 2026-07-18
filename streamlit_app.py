@@ -257,9 +257,7 @@ with tab2:
     with col_r:
         if has_cross_leap:
             st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
-            st.info("💡 依「死人無閏月」傳統，系統自動將對年提前一個月辦理，維持完整 12 個農曆月週期。")
-        else:
-            st.info("💡 守喪期間無跨閏月，對年依常規對齊隔年農曆同月同日辦理。")
+
 
     if st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run"):
         st.session_state['latest_date'] = death_date_input
