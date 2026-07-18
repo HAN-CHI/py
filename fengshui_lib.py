@@ -202,32 +202,17 @@ class AstronomyEngine:
         return round(eot_minutes, 1), round(math.degrees(alt), 1)
 
     @staticmethod
-    def find_term_time_skyfield(target_date, target_term_name):
-        target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
+    def get_solar_longitude_skyfield(t):
+        """ 使用 Skyfield 精確計算黃經 (修正 API 呼叫方式) """
+        # 計算太陽相對於地球的測星座標 (Astrometric position)
+        astrometric = earth.at(t).observe(sun)
         
-        # 搜尋區間：以目標日期為中心前後 15 天
-        t0 = ts.utc(target_date.year, target_date.month, target_date.day - 15)
-        t1 = ts.utc(target_date.year, target_date.month, target_date.day + 15)
+        # 修正重點：直接使用 .frame_latlon() 傳入參考框架，
+        # 這樣就無須處理複雜的 epoch 參數，也不會再報錯
+        lat, lon, distance = astrometric.frame_latlon(ecliptic_frame)
         
-        for _ in range(40):
-            # 取中點
-            mid_jd = (t0.tt + t1.tt) / 2
-            mid = ts.tt_jd(mid_jd)
-            
-            # 計算當前黃經與目標黃經的差異
-            curr_lon = AstronomyEngine.get_solar_longitude_skyfield(mid)
-            
-            # 處理跨 0 度的黃經差 (這是天文計算的標準做法)
-            diff = (curr_lon - target_lon + 180) % 360 - 180
-            
-            if diff < 0:
-                t0 = mid
-            else:
-                t1 = mid
-        
-        # 確保回傳時區正確 (UTC+8)
-        taiwan_tz = timezone(timedelta(hours=8))
-        return t0.astimezone(taiwan_tz).strftime("%Y-%m-%d %H:%M")
+        return lon.degrees
+
 
     @staticmethod
     def get_month_pillar(year_gz, solar_term):
