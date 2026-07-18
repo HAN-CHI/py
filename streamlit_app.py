@@ -495,6 +495,20 @@ with tab5:
         with c4:
             st.metric("節氣", astronomy_data["solar_term"])
             st.caption(f"交節時間: {astronomy_data.get('solar_term_time', '計算中...')}")
+# 顯示節氣詳細時間區間
+    with st.expander(f"節氣詳細資訊: {astronomy_data['solar_term']}"):
+        st.write(f"目前節氣: {astronomy_data['solar_term']} 的交節氣時間表")
+        
+        col_start, col_end = st.columns(2)
+        
+        # 這裡的 term_start 和 term_end 是您從 AstronomyEngine 傳回來的資料
+        col_start.write("開始時間 (國曆)")
+        col_start.code(astronomy_data.get("term_start", "未知"))
+        
+        col_end.write("結束時間 (國曆)")
+        col_end.code(astronomy_data.get("term_end", "未知"))
+        
+        st.info(f"當前日期處於 {astronomy_data['solar_term']} 區間內")
     
     # 顯示詳細數據 (新增 .get() 確保如果欄位缺失不會報錯)
     with st.expander("查看詳細天文數據"):
