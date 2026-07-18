@@ -248,7 +248,7 @@ class AstronomyEngine:
             "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_start": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_end": AstronomyEngine.find_term_time_skyfield(local_date, next_term),
-            "julian_day": round(t.tt - 0.000787, 5),
+            "julian_day": round(float(t.tt - 0.000787), 5),
             "ecliptic_longitude": round(lon_deg, 2),
             "equation_of_time": f"{eot}m",
             "sun_altitude": alt,
