@@ -203,6 +203,11 @@ class AstronomyEngine:
             if start <= lon_deg < (end if end > start else end + 360):
                 solar_term = terms[i][0]
                 break
+
+        # 找出當前節氣與下一個節氣
+        terms_list = [t[0] for t in sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])]
+        current_idx = terms_list.index(solar_term)
+        next_term = terms_list[(current_idx + 1) % 24]
         
         # 3. 回傳完整資訊
         return {
@@ -212,4 +217,7 @@ class AstronomyEngine:
             "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
             "gan_zhi": f"{year_gz}年 {day_gz}日" # 簡化，避免月柱邏輯干擾
+            # 動態計算開始與結束時間
+            "term_start": AstronomyEngine.find_term_time(local_date, solar_term),
+            "term_end": AstronomyEngine.find_term_time(local_date, next_term),
         }
