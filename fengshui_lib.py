@@ -145,6 +145,9 @@ class TimeSafetyEngine:
         is_unsafe = TimeSafetyEngine.is_wubuyu(day_gan, hour_gan)
         return hour_gan, is_unsafe
         
+import math
+from datetime import datetime, timedelta
+
 class AstronomyEngine:
     # 太陽黃經從 0 度（春分）開始，每 15 度為一個節氣
     SOLAR_TERMS = [
@@ -191,7 +194,7 @@ class AstronomyEngine:
         term_idx = int((ecliptic_longitude + 7.5) / 15) % 24
         solar_term = AstronomyEngine.SOLAR_TERMS[term_idx]
 
-		# 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
+        # 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
         # 擇日學中，月干支是由節氣決定的（如黃經105度小暑到立秋前為乙未月）
         month_offset = int((ecliptic_longitude - 15) / 30) % 12
         month_branches = ["卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑", "寅"]
@@ -206,10 +209,6 @@ class AstronomyEngine:
         month_zhi_idx = branches.index(month_zhi)
         # 因正月為寅月，做相對位移
         month_gan_idx = (start_month_gan_idx + month_zhi_idx - 2) % 10
-        month_gz = stems[month_gan_idx] + month_zhi
-        
-        # 算出月干
-        month_gan_idx = (first_month_gan_idx + (month_zhi_idx - 2)) % 10
         month_gz = stems[month_gan_idx] + month_zhi
 
         # 6. 計算均時差 (Equation of Time)
