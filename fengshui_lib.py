@@ -143,3 +143,7 @@ class TimeSafetyEngine:
         hour_gan = TimeEngine.get_hour_gan(day_gan, hour_idx)
         is_unsafe = TimeSafetyEngine.is_wubuyu(day_gan, hour_gan)
         return hour_gan, is_unsafe
+        
+# 這是節氣 天文的核心邏輯
+    day_idx = (10 + delta_days) % 60
+    day_gz = PreciseCalendar.STEMS[day_idx % 10] + PreciseCalendar.BRANCHES[day_idx % 12]
