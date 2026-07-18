@@ -219,14 +219,16 @@ class AstronomyEngine:
 
         # 輸出 JSON 規格
         return {
+    # 輸出 JSON 規格
+        return {
             "solar_term": solar_term,
             "solar_term_time": AstronomyEngine.find_term_time(local_date, solar_term),
             "julian_day": round(jd, 5),
             "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "gan_zhi": f"{year_gz}年 {month_gz}月 {day_gz}日"
-            "solar_term": solar_term,
-            "term_start": "2026-05-21 08:36:28",  # 範例數據，建議此處接入動態計算
-            "term_end": "2026-06-05 23:48:04",
-            "julian_day": round(jd, 5),
+            "local_timezone": "UTC+8",
+            "gan_zhi": f"{year_gz}年 {month_gz}月 {day_gz}日",
+            "term_start": "2026-05-21 08:36:28", 
+            "term_end": "2026-06-05 23:48:04"
+        }
         }
