@@ -164,23 +164,33 @@ class AstronomyEngine:
 
     @staticmethod
     def find_term_time(local_date, target_term_name):
+        """ 使用修正過的黃經搜尋，精確到分 """
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
-        # 搜尋範圍擴大為目標日期前後 30 天，確保能涵蓋節氣跳轉
-        low = datetime.combine(local_date, datetime.min.time()) - timedelta(days=30)
-        high = datetime.combine(local_date, datetime.min.time()) + timedelta(days=30)
         
-        for _ in range(25):
+        # 核心調整：搜尋範圍縮小至該節氣出現的特定月份前後
+        # 使用 datetime 確保無時區偏移
+        base_dt = datetime.combine(local_date, datetime.min.time())
+        low = base_dt - timedelta(days=20)
+        high = base_dt + timedelta(days=20)
+        
+        # 使用 30 次迭代，精度可達 1/2^30 天，遠高於分鐘
+        for _ in range(30):
             mid = low + (high - low) / 2
+            # 轉換為 UTC 計算 JD
             utc_mid = mid - timedelta(hours=8)
             y, m, d = utc_mid.year, utc_mid.month, utc_mid.day
             if m <= 2: y -= 1; m += 12
             A = int(y / 100); B = 2 - A + int(A / 4)
-            jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_mid.hour + utc_mid.minute/60.0)/24.0
+            jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_mid.hour + utc_mid.minute/60.0 + utc_mid.second/3600.0)/24.0
             
-            if AstronomyEngine.get_ecliptic_longitude(jd) < target_lon:
-                low = mid
-            else:
+            # 修正黃經判定：處理 360 度跨越問題
+            current_lon = AstronomyEngine.get_ecliptic_longitude(jd)
+            # 將黃經標準化以便比較
+            diff = (current_lon - target_lon + 360) % 360
+            if diff > 180: # 跨越 0/360 度邊界
                 high = mid
+            else:
+                low = mid
         return mid.strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
