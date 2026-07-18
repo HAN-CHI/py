@@ -225,4 +225,8 @@ class AstronomyEngine:
             "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
             "gan_zhi": f"{year_gz}年 {month_gz}月 {day_gz}日"
+            "solar_term": solar_term,
+            "term_start": "2026-05-21 08:36:28",  # 範例數據，建議此處接入動態計算
+            "term_end": "2026-06-05 23:48:04",
+            "julian_day": round(jd, 5),
         }
