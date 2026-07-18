@@ -264,50 +264,33 @@ with tab2:
     if st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run"):
         st.session_state['latest_date'] = death_date_input
         
-    final_calc_date = st.session_state['latest_date']
-    p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
-    week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
-    
-    # 計算日期
-    def get_lunar_str(dt_obj):
-        try:
-            l = ZhDate.from_datetime(dt_obj)
-            return f"農曆 {'閏' if l.leap_month else ''}{l.lunar_month}月{l.lunar_day}日"
-        except: return "無法計算"
-
-    # 初始化數據
-    t6_dt, t7_dt, b100_dt = p_dt + timedelta(days=5), p_dt + timedelta(days=6), p_dt + timedelta(days=99)
-    dn_dt_display, dn_lunar_display, dn_week_display, dn_remark = "無法計算", "無法計算", "無法計算", ""
-
-    # 對年計算引擎
-    if lunar_now:
-        try:
-            dn_y = lunar_now.lunar_year + 1
-            dn_m = lunar_now.lunar_month - 1 if has_cross_leap else lunar_now.lunar_month
-            if has_cross_leap and dn_m == 0: dn_m, dn_y = 12, lunar_now.lunar_year
-            
-            for offset in range(5):
-                try:
-                    test_dt = ZhDate(dn_y, dn_m, lunar_now.lunar_day - offset).to_datetime()
-                    dn_dt_display = test_dt.strftime('%Y-%m-%d')
-                    dn_lunar_display = get_lunar_str(test_dt)
-                    days_diff = (test_dt.date() - p_dt.date()).days
-                    dn_week_display = week_names[test_dt.weekday()]
-                    dn_remark = f"對年遵循「12個農曆月」原則（實際國曆相隔：{days_diff} 天，含起始日共 {days_diff + 1} 天）。"
-                    break
-                except: continue
-        except: pass
-
-    calc_data = {
-        "祭祀項目": ["往生當天 (第 1 天)", "🕯️ 頭七儀式 (第 6 天深夜)", "頭七正日 (第 7 天)", "百日 (第 100 天)", "對年 (周年紀念)"],
-        "國曆日期": [p_dt.strftime('%Y-%m-%d'), f"★ {t6_dt.strftime('%Y-%m-%d')}", t7_dt.strftime('%Y-%m-%d'), b100_dt.strftime('%Y-%m-%d'), dn_dt_display],
-        "星期": [week_names[p_dt.weekday()], week_names[t6_dt.weekday()], week_names[t7_dt.weekday()], week_names[b100_dt.weekday()], dn_week_display],
-        "對應農曆": [get_lunar_str(p_dt), get_lunar_str(t6_dt), get_lunar_str(t7_dt), get_lunar_str(b100_dt), dn_lunar_display],
-        "建議時程 / 備註": ["家屬守靈安靈", "21:00 開始，23:00~01:00 完成儀式", "亡靈返家探視", "卒後百日祭祀", dn_remark]
-    }
-    
-    st.subheader("📋 智能化祭祀日期與儀式推算結果表")
-    st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
+    if final_calc_date:
+        p_dt = datetime(final_calc_date.year, final_calc_date.month, final_calc_date.day)
+        week_names = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
+        
+        # 定義基礎日期
+        t6_dt = p_dt + timedelta(days=5)
+        t7_dt = p_dt + timedelta(days=6)
+        b100_dt = p_dt + timedelta(days=99)
+        
+        # 【新邏輯】對年：以國曆計算，含起始日 355 天 (即 +354)
+        dn_dt_target = p_dt + timedelta(days=354)
+        dn_dt_display = dn_dt_target.strftime('%Y-%m-%d')
+        dn_week_display = week_names[dn_dt_target.weekday()]
+        dn_lunar_display = get_lunar_str(dn_dt_target)
+        dn_remark = "依國曆計算原則：相隔 354 天（含起始日為 355 天）。"
+        
+        # 準備表格數據
+        calc_data = {
+            "祭祀項目": ["往生當天 (第 1 天)", "🕯️ 頭七儀式 (第 6 天深夜)", "頭七正日 (第 7 天)", "百日 (第 100 天)", "對年 (周年紀念)"],
+            "國曆日期": [p_dt.strftime('%Y-%m-%d'), f"★ {t6_dt.strftime('%Y-%m-%d')}", t7_dt.strftime('%Y-%m-%d'), b100_dt.strftime('%Y-%m-%d'), dn_dt_display],
+            "星期": [week_names[p_dt.weekday()], week_names[t6_dt.weekday()], week_names[t7_dt.weekday()], week_names[b100_dt.weekday()], dn_week_display],
+            "對應農曆": [get_lunar_str(p_dt), get_lunar_str(t6_dt), get_lunar_str(t7_dt), get_lunar_str(b100_dt), dn_lunar_display],
+            "建議時程 / 備註": ["家屬守靈安靈", "21:00 開始，23:00~01:00 完成儀式", "亡靈返家探視", "卒後百日祭祀", dn_remark]
+        }
+        
+        st.subheader("📋 智能化祭祀日期與儀式推算結果表")
+        st.dataframe(pd.DataFrame(calc_data), use_container_width=True)
         
 # ==========================================
 # 🦁 新增分頁3：生肖與塔位吉方查詢
