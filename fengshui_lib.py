@@ -227,7 +227,7 @@ class AstronomyEngine:
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
         # --- 修正點 1: 強制將時間建立為 UTC+8 ---
-        taiwan_tz = timezone(timedelta(hours=8))
+        taiwan_tz = timezone(timedelta(hours=0))
         dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
         t = ts.utc(dt.replace(tzinfo=taiwan_tz))
         
