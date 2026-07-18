@@ -252,7 +252,6 @@ with tab2:
     with col_r:
         if has_cross_leap:
             st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
-            st.info("💡 系統已依國曆天數原則計算對年，請留意農曆日期是否符合家族習俗。")
         else:
             st.info("💡 守喪期間無跨閏月。")
 
