@@ -1,6 +1,7 @@
+import math
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES,HUANGDAO_DAILY_SEQUENCE,MONTH_START_BRANCH_IDX
 from zhdate import ZhDate
-from datetime import datetime
+from datetime import datetime, timedelta
 
 class PreciseCalendar:
     STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
@@ -144,6 +145,94 @@ class TimeSafetyEngine:
         is_unsafe = TimeSafetyEngine.is_wubuyu(day_gan, hour_gan)
         return hour_gan, is_unsafe
         
-# 這是節氣 天文的核心邏輯
-    day_idx = (10 + delta_days) % 60
-    day_gz = PreciseCalendar.STEMS[day_idx % 10] + PreciseCalendar.BRANCHES[day_idx % 12]
+class AstronomyEngine:
+    # 太陽黃經從 0 度（春分）開始，每 15 度為一個節氣
+    SOLAR_TERMS = [
+        "春分", "清明", "穀雨", "立夏", "小滿", "芒種",
+        "夏至", "小暑", "大暑", "立秋", "處暑", "白露",
+        "秋分", "寒露", "霜降", "立冬", "小雪", "大雪",
+        "冬至", "小寒", "大寒", "立春", "雨水", "驚蟄"
+    ]
+
+    @staticmethod
+    def get_solar_details(local_date, local_hour, year_gz, day_gz, lat=24.16, lon=120.64):
+        """
+        高精度天文觀測資料計算
+        local_date: datetime.date 物件
+        local_hour: 整數 (0-23)
+        year_gz: 原有系統算出的年柱 (如 '丙午')
+        day_gz: 原有系統算出的日柱 (如 '戊子')
+        lat/lon: 觀測經緯度，預設為台中市 (24.16, 120.64)
+        """
+        # 1. 建立在地時間並轉換為 UTC 時間 (台灣為 UTC+8)
+        local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
+        utc_dt = local_dt - timedelta(hours=8)
+        
+        # 2. 計算儒略日 (Julian Day)
+        y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
+        h, mn, s = utc_dt.hour, utc_dt.minute, utc_dt.second
+        if m <= 2:
+            y -= 1
+            m += 12
+        A = int(y / 100)
+        B = 2 - A + int(A / 4)
+        jd_base = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5
+        day_fraction = (h + mn / 60.0 + s / 3600.0) / 24.0
+        jd = jd_base + day_fraction
+
+        # 3. 計算太陽黃經 (Ecliptic Longitude)
+        n = jd - 2451545.0  # 自 J2000.0 起算的天數
+        L = (280.460 + 0.9856474 * n) % 360
+        g = (357.528 + 0.9856003 * n) % 360
+        g_rad = math.radians(g)
+        ecliptic_longitude = (L + 1.915 * math.sin(g_rad) + 0.020 * math.sin(2 * g_rad)) % 360
+        
+        # 4. 根據黃經推算當下對應的節氣名稱
+        term_idx = int((ecliptic_longitude + 7.5) / 15) % 24
+        solar_term = AstronomyEngine.SOLAR_TERMS[term_idx]
+
+        # 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
+        # 擇日學中，月干支是由節氣決定的（如黃經105度小暑到立秋前為乙未月）
+        month_offset = int((ecliptic_longitude - 15) / 30) % 12
+        month_branches = ["卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑", "寅"]
+        month_zhi = month_branches[month_offset]
+        
+        # 根據年干求月干 (五丙日起鼠頭公式)
+        stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
+        year_gan_idx = stems.index(year_gz[0])
+        start_month_gan_idx = ((year_gan_idx % 5) * 2 + 2) % 10
+        # 配合節氣月支求月干
+        branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+        month_zhi_idx = branches.index(month_zhi)
+        # 因正月為寅月，做相對位移
+        month_gan_idx = (start_month_gan_idx + month_zhi_idx - 2) % 10
+        month_gz = stems[month_gan_idx] + month_zhi
+
+        # 6. 計算均時差 (Equation of Time)
+        epsilon = math.radians(23.439 - 0.0000004 * n)
+        y_tan = math.tan(epsilon / 2) ** 2
+        L_rad = math.radians(L)
+        E_rad = (y_tan * math.sin(2 * L_rad) 
+                 - 2 * 0.01671 * math.sin(g_rad) 
+                 + 4 * 0.01671 * y_tan * math.sin(g_rad) * math.cos(2 * L_rad) 
+                 - 0.5 * (y_tan**2) * math.sin(4 * L_rad))
+        equation_of_time_min = math.degrees(E_rad) * 4
+
+        # 7. 計算當下經緯度的太陽高度角 (Sun Altitude)
+        dec = math.asin(math.sin(epsilon) * math.sin(math.radians(ecliptic_longitude)))
+        hour_angle = math.radians((local_dt.hour + local_dt.minute/60.0 - 12) * 15 + (lon - 120))
+        lat_rad = math.radians(lat)
+        sin_alt = math.sin(lat_rad) * math.sin(dec) + math.cos(lat_rad) * math.cos(dec) * math.cos(hour_angle)
+        sun_altitude = math.degrees(math.asin(max(-1.0, min(1.0, sin_alt))))
+
+        # 8. 輸出完全符合指定規格的字典結構
+        return {
+            "solar_term": solar_term,
+            "julian_day": round(jd, 5),
+            "ecliptic_longitude": round(ecliptic_longitude, 1),
+            "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
+            "local_timezone": "UTC+8",
+            "equation_of_time": f"{round(equation_of_time_min, 1)}m",
+            "sun_altitude": round(sun_altitude, 1),
+            "gan_zhi": f"{year_gz}年 {month_gz}月 {day_gz}日"
+        }
