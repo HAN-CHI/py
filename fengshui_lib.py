@@ -248,19 +248,23 @@ class AstronomyEngine:
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
+        # 1. 建立 Skyfield 時間物件
         t = ts.utc(local_date.year, local_date.month, local_date.day, local_hour)
+        
+        # 2. 計算精確數值
         lon_deg = AstronomyEngine.get_solar_longitude_skyfield(t)
         eot, alt = AstronomyEngine.get_astro_params(t.tt, lon_deg)
         
+        # 3. 判定當前節氣
         terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         solar_term, current_idx = "未知", 0
         for i in range(24):
             start, end = terms_list[i][1], terms_list[(i+1)%24][1]
             if (start > end and (lon_deg >= start or lon_deg < end)) or (start <= lon_deg < end):
                 solar_term, current_idx = terms_list[i][0], i; break
-        
         next_term = terms_list[(current_idx + 1) % 24][0]
         
+        # 4. 回傳與您 UI 完全匹配的字典格式
         return {
             "solar_term": solar_term,
             "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
@@ -271,5 +275,6 @@ class AstronomyEngine:
             "equation_of_time": f"{eot}m",
             "sun_altitude": alt,
             "utc_datetime": t.utc_iso(),
+            "local_timezone": "UTC+8", # 配合您的 m4.metric 顯示
             "gan_zhi": f"{year_gz} {AstronomyEngine.get_month_pillar(year_gz, solar_term)} {day_gz}"
         }
