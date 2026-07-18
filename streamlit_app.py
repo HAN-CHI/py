@@ -8,7 +8,7 @@ from datetime import datetime, date, timedelta
 from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
 importlib.reload(fengshui_lib)
-from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine,DailyHuangDaoEngine
+from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine,DailyHuangDaoEngine,AstronomyEngine
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
 
 
@@ -466,9 +466,6 @@ with tab5:
     # 🛰️ 擴充功能：高精度天文物理觀測座標輸出
     st.markdown("---")
     st.subheader("🛰️ 現代天文物理觀測指標 (JSON 資料庫規格)")
-    
-    # 從您原本引入的庫中調用全新附加的 AstronomyEngine
-    from fengshui_lib import AstronomyEngine
     
     # 傳入目前網頁選定的日期、時辰，以及系統原本算出的年柱與日柱
     astronomy_json = AstronomyEngine.get_solar_details(
