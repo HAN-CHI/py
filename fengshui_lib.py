@@ -156,7 +156,7 @@ try:
     earth = planets['earth']
     sun = planets['sun']
 except Exception as e:
-    print(f"星曆載入錯誤: {e}")
+    st.error(f"套件載入失敗，請確認已在 requirements.txt 加入 skyfield 與 numpy: {e}")
 
 class AstronomyEngine:
     TERMS_MAP = {
