@@ -191,18 +191,22 @@ class AstronomyEngine:
         term_idx = int((ecliptic_longitude + 7.5) / 15) % 24
         solar_term = AstronomyEngine.SOLAR_TERMS[term_idx]
 
-        # 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
-	    branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
-        # 確保 month_zhi 是單一字元，且存在於 branches 中
-        if month_zhi not in branches:
-            # 若計算出錯，預設取當前日期對應的月份或給予安全值
-            month_zhi = branches[(local_dt.month - 1 + 2) % 12] # 簡易回退邏輯
-
+		# 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
+        # 擇日學中，月干支是由節氣決定的（如黃經105度小暑到立秋前為乙未月）
+        month_offset = int((ecliptic_longitude - 15) / 30) % 12
+        month_branches = ["卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑", "寅"]
+        month_zhi = month_branches[month_offset]
+        
+        # 根據年干求月干 (五丙日起鼠頭公式)
         stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
         year_gan_idx = stems.index(year_gz[0])
-        first_month_gan_idx = ((year_gan_idx % 5) * 2 + 2) % 10
-        
+        start_month_gan_idx = ((year_gan_idx % 5) * 2 + 2) % 10
+        # 配合節氣月支求月干
+        branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
         month_zhi_idx = branches.index(month_zhi)
+        # 因正月為寅月，做相對位移
+        month_gan_idx = (start_month_gan_idx + month_zhi_idx - 2) % 10
+        month_gz = stems[month_gan_idx] + month_zhi
         
         # 算出月干
         month_gan_idx = (first_month_gan_idx + (month_zhi_idx - 2)) % 10
