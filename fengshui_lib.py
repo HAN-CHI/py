@@ -150,14 +150,11 @@ class TimeSafetyEngine:
         return hour_gan, is_unsafe
 
 #天文觀測資料計算
-# 初始化 Skyfield 全域物件 (NASA DE421 星曆)
-try:
-    ts = load.timescale()
-    planets = load('de421.bsp')
-    earth = planets['earth']
-    sun = planets['sun']
-except Exception as e:
-    st.error(f"套件載入失敗，請確認已在 requirements.txt 加入 skyfield 與 numpy: {e}")
+# --- 全域初始化 ---
+ts = load.timescale()
+planets = load('de421.bsp')
+earth = planets['earth']
+sun = planets['sun']
 
 class AstronomyEngine:
     TERMS_MAP = {
@@ -170,17 +167,13 @@ class AstronomyEngine:
     @staticmethod
     def get_solar_longitude_skyfield(t):
         astrometric = earth.at(t).observe(sun)
-        # 改用 ecliptic_frame
-        _, lon, _ = astrometric.ecliptic_latlon(epoch=ecliptic_frame)
+        lat, lon, distance = astrometric.frame_latlon(ecliptic_frame)
         return lon.degrees
 
     @staticmethod
     def get_astro_params(jd, true_lon):
-        # 台中西屯座標 (24.17N, 120.63E)
         lat, lon = 24.17, 120.63
         T = (jd - 2451545.0) / 36525.0
-        
-        # 1. 均時差 (Equation of Time)
         M = math.radians((357.52911 + 35999.05029 * T) % 360)
         L0 = math.radians((280.46646 + 36000.76983 * T) % 360)
         e = 0.016708634
@@ -188,31 +181,28 @@ class AstronomyEngine:
         y = math.tan(obliquity / 2)**2
         eot = y * math.sin(2*L0) - 2*e*math.sin(M) + 4*e*y*math.sin(M)*math.cos(2*L0) - 0.5*y**2*math.sin(4*L0) - 1.25*e**2*math.sin(2*M)
         eot_minutes = math.degrees(eot) * 4.0
-        
-        # 2. 太陽高度角
         declination = math.asin(math.sin(obliquity) * math.sin(math.radians(true_lon)))
         gmst = 280.46061837 + 360.98564736629 * (jd - 2451545.0)
         lmst = math.radians((gmst + lon) % 360)
         right_ascension = math.atan2(math.cos(obliquity) * math.sin(math.radians(true_lon)), math.cos(math.radians(true_lon)))
         hour_angle = lmst - right_ascension
-        
         alt = math.asin(math.sin(math.radians(lat)) * math.sin(declination) + 
                         math.cos(math.radians(lat)) * math.cos(declination) * math.cos(hour_angle))
-        
         return round(eot_minutes, 1), round(math.degrees(alt), 1)
 
     @staticmethod
-    def get_solar_longitude_skyfield(t):
-        """ 使用 Skyfield 精確計算黃經 (修正 API 呼叫方式) """
-        # 計算太陽相對於地球的測星座標 (Astrometric position)
-        astrometric = earth.at(t).observe(sun)
-        
-        # 修正重點：直接使用 .frame_latlon() 傳入參考框架，
-        # 這樣就無須處理複雜的 epoch 參數，也不會再報錯
-        lat, lon, distance = astrometric.frame_latlon(ecliptic_frame)
-        
-        return lon.degrees
-
+    def find_term_time_skyfield(target_date, target_term_name):
+        target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
+        t0 = ts.utc(target_date.year, target_date.month, target_date.day - 15)
+        t1 = ts.utc(target_date.year, target_date.month, target_date.day + 15)
+        for _ in range(40):
+            mid = ts.tt_jd((t0.tt + t1.tt) / 2)
+            curr_lon = AstronomyEngine.get_solar_longitude_skyfield(mid)
+            diff = (curr_lon - target_lon + 180) % 360 - 180
+            if diff < 0: t0 = mid
+            else: t1 = mid
+        taiwan_tz = timezone(timedelta(hours=8))
+        return t0.astimezone(taiwan_tz).strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
     def get_month_pillar(year_gz, solar_term):
@@ -226,21 +216,15 @@ class AstronomyEngine:
         stems = "甲乙丙丁戊己庚辛壬癸"
         branches = "寅卯辰巳午未申酉戌亥子丑"
         stem_starts = {"甲": "丙", "己": "丙", "乙": "戊", "庚": "戊", "丙": "庚", "辛": "庚", "丁": "壬", "壬": "壬", "戊": "甲", "癸": "甲"}
-        
         start_stem = stem_starts.get(year_gz[0], "丙")
         month_stem_idx = (stems.index(start_stem) + branches.index(month_branch)) % 10
         return f"{stems[month_stem_idx]}{month_branch}月"
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
-        # 1. 建立 Skyfield 時間物件
         t = ts.utc(local_date.year, local_date.month, local_date.day, local_hour)
-        
-        # 2. 計算精確數值
         lon_deg = AstronomyEngine.get_solar_longitude_skyfield(t)
         eot, alt = AstronomyEngine.get_astro_params(t.tt, lon_deg)
-        
-        # 3. 判定當前節氣
         terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         solar_term, current_idx = "未知", 0
         for i in range(24):
@@ -249,7 +233,6 @@ class AstronomyEngine:
                 solar_term, current_idx = terms_list[i][0], i; break
         next_term = terms_list[(current_idx + 1) % 24][0]
         
-        # 4. 回傳與您 UI 完全匹配的字典格式
         return {
             "solar_term": solar_term,
             "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
@@ -260,6 +243,6 @@ class AstronomyEngine:
             "equation_of_time": f"{eot}m",
             "sun_altitude": alt,
             "utc_datetime": t.utc_iso(),
-            "local_timezone": "UTC+8", # 配合您的 m4.metric 顯示
+            "local_timezone": "UTC+8",
             "gan_zhi": f"{year_gz} {AstronomyEngine.get_month_pillar(year_gz, solar_term)} {day_gz}"
         }
