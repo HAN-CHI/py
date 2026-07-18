@@ -152,9 +152,12 @@ class TimeSafetyEngine:
 #天文觀測資料計算
 # --- 全域初始化 ---
 ts = load.timescale()
-planets = load('de421.bsp')
-earth = planets['earth']
-sun = planets['sun']
+try:
+    planets = load('de421.bsp')
+    earth = planets['earth']
+    sun = planets['sun']
+except Exception as e:
+    print(f"星曆載入失敗: {e}")
 
 class AstronomyEngine:
     TERMS_MAP = {
@@ -193,6 +196,7 @@ class AstronomyEngine:
     @staticmethod
     def find_term_time_skyfield(target_date, target_term_name):
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
+        # 設定搜尋範圍
         t0 = ts.utc(target_date.year, target_date.month, target_date.day - 15)
         t1 = ts.utc(target_date.year, target_date.month, target_date.day + 15)
         for _ in range(40):
@@ -222,9 +226,14 @@ class AstronomyEngine:
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
-        t = ts.utc(local_date.year, local_date.month, local_date.day, local_hour)
+        # --- 修正點 1: 強制將時間建立為 UTC+8 ---
+        taiwan_tz = timezone(timedelta(hours=8))
+        dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
+        t = ts.utc(dt.replace(tzinfo=taiwan_tz))
+        
         lon_deg = AstronomyEngine.get_solar_longitude_skyfield(t)
         eot, alt = AstronomyEngine.get_astro_params(t.tt, lon_deg)
+        
         terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         solar_term, current_idx = "未知", 0
         for i in range(24):
@@ -233,12 +242,13 @@ class AstronomyEngine:
                 solar_term, current_idx = terms_list[i][0], i; break
         next_term = terms_list[(current_idx + 1) % 24][0]
         
+        # --- 修正點 2: 使用 utc_jpl 計算標準 JD，去除 ΔT 偏差 ---
         return {
             "solar_term": solar_term,
             "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_start": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_end": AstronomyEngine.find_term_time_skyfield(local_date, next_term),
-            "julian_day": round(t.tt, 5),
+            "julian_day": round(t.utc_jpl(), 5), 
             "ecliptic_longitude": round(lon_deg, 2),
             "equation_of_time": f"{eot}m",
             "sun_altitude": alt,
