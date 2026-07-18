@@ -233,6 +233,29 @@ with tab2:
     with col_l:
         death_date_input = st.date_input("選擇往生日期：", st.session_state['latest_date'], key="tab3_dp")
 
+    # 邏輯計算區：保留閏月偵測警示
+    has_cross_leap = False
+    detected_leap_name = ""
+    p_dt = datetime(death_date_input.year, death_date_input.month, death_date_input.day)
+    
+    try:
+        lunar_now = ZhDate.from_datetime(p_dt)
+        for day_offset in range(1, 355):
+            scan_dt = p_dt + timedelta(days=day_offset)
+            scan_lunar = ZhDate.from_datetime(scan_dt)
+            if scan_lunar.leap_month and (not lunar_now.leap_month or scan_lunar.lunar_month != lunar_now.lunar_month):
+                has_cross_leap = True
+                detected_leap_name = f"閏 {scan_lunar.lunar_month} 月"
+                break
+    except: pass
+            
+    with col_r:
+        if has_cross_leap:
+            st.warning(f"⚠️ 偵測到守喪期內適逢【{detected_leap_name}】")
+            st.info("💡 系統已依國曆天數原則計算對年，請留意農曆日期是否符合家族習俗。")
+        else:
+            st.info("💡 守喪期間無跨閏月。")
+
     
     if st.button("🚀 執行祭祀日期推算", use_container_width=True, key="tab3_run"):
         st.session_state['latest_date'] = death_date_input
@@ -252,7 +275,7 @@ with tab2:
     t6_dt, t7_dt, b100_dt = p_dt + timedelta(days=5), p_dt + timedelta(days=6), p_dt + timedelta(days=99)
     
     # 【修改區】以國曆計算對年：往生當天(第1天) + 354天 = 第355天
-    dn_dt_target = p_dt + timedelta(days=355)
+    dn_dt_target = p_dt + timedelta(days=354)
     dn_dt_display = dn_dt_target.strftime('%Y-%m-%d')
     dn_week_display = week_names[dn_dt_target.weekday()]
     dn_lunar_display = get_lunar_str(dn_dt_target)
