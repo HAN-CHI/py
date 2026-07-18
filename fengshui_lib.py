@@ -226,26 +226,42 @@ class AstronomyEngine:
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
-        # --- 修正點 1: 強制將時間建立為 UTC+8 ---
-        taiwan_tz = timezone(timedelta(hours=0))
+        taiwan_tz = timezone(timedelta(hours=8))
         dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
         t = ts.utc(dt.replace(tzinfo=taiwan_tz))
         
         lon_deg = AstronomyEngine.get_solar_longitude_skyfield(t)
-        eot, alt = AstronomyEngine.get_astro_params(t.tt, lon_deg)
         
-        terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
-        solar_term, current_idx = "未知", 0
-        for i in range(24):
-            start, end = terms_list[i][1], terms_list[(i+1)%24][1]
-            if (start > end and (lon_deg >= start or lon_deg < end)) or (start <= lon_deg < end):
-                solar_term, current_idx = terms_list[i][0], i; break
-        next_term = terms_list[(current_idx + 1) % 24][0]
+        # 修正核心：不再依賴固定 map，而是根據精確黃經來判斷目前節氣
+        # 大暑是黃經 120 度
+        # 透過邏輯判定，確保在未達 120 度前都是小暑
+        terms = [
+            ("立春", 315), ("雨水", 330), ("驚蟄", 345), ("春分", 0), ("清明", 15), ("穀雨", 30),
+            ("立夏", 45), ("小滿", 60), ("芒種", 75), ("夏至", 90), ("小暑", 105), ("大暑", 120),
+            ("立秋", 135), ("處暑", 150), ("白露", 165), ("秋分", 180), ("寒露", 195), ("霜降", 210),
+            ("立冬", 225), ("小雪", 240), ("大雪", 255), ("冬至", 270), ("小寒", 285), ("大寒", 300)
+        ]
         
+        # 調整邏輯：判斷當前黃經處於哪個區間
+        # 使用 modulo 處理 360 度的跳轉
+        current_term = "大寒"
+        for i in range(len(terms)):
+            start_lon = terms[i][1]
+            end_lon = terms[(i + 1) % len(terms)][1]
+            
+            # 處理跨 0 度情況
+            if start_lon <= end_lon:
+                if start_lon <= lon_deg < end_lon:
+                    current_term = terms[i][0]
+                    break
+            else: # 跨年/跨0度情況
+                if lon_deg >= start_lon or lon_deg < end_lon:
+                    current_term = terms[i][0]
+                    break
         # --- 修正點 2: 使用 utc_jpl 計算標準 JD，去除 ΔT 偏差 ---
         return {
-            "solar_term": solar_term,
-            "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
+            "solar_term": current_term,
+            "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, current_term),
             "term_start": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_end": AstronomyEngine.find_term_time_skyfield(local_date, next_term),
             "julian_day": round(float(t.tt - 0.000787), 5),
