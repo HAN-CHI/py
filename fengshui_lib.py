@@ -231,10 +231,9 @@ class AstronomyEngine:
         t = ts.utc(dt.replace(tzinfo=taiwan_tz))
         
         lon_deg = AstronomyEngine.get_solar_longitude_skyfield(t)
+        eot, alt = AstronomyEngine.get_astro_params(t.tt, lon_deg)
         
-        # 修正核心：不再依賴固定 map，而是根據精確黃經來判斷目前節氣
-        # 大暑是黃經 120 度
-        # 透過邏輯判定，確保在未達 120 度前都是小暑
+        # 定義節氣列表
         terms = [
             ("立春", 315), ("雨水", 330), ("驚蟄", 345), ("春分", 0), ("清明", 15), ("穀雨", 30),
             ("立夏", 45), ("小滿", 60), ("芒種", 75), ("夏至", 90), ("小暑", 105), ("大暑", 120),
@@ -242,33 +241,31 @@ class AstronomyEngine:
             ("立冬", 225), ("小雪", 240), ("大雪", 255), ("冬至", 270), ("小寒", 285), ("大寒", 300)
         ]
         
-        # 調整邏輯：判斷當前黃經處於哪個區間
-        # 使用 modulo 處理 360 度的跳轉
-        current_term = "大寒"
+        # 判定當前節氣 (solar_term) 與下一個節氣 (next_term)
+        solar_term = "大寒" # 預設值
+        current_idx = 0
         for i in range(len(terms)):
             start_lon = terms[i][1]
             end_lon = terms[(i + 1) % len(terms)][1]
-            
-            # 處理跨 0 度情況
             if start_lon <= end_lon:
                 if start_lon <= lon_deg < end_lon:
-                    current_term = terms[i][0]
-                    break
-            else: # 跨年/跨0度情況
+                    solar_term, current_idx = terms[i][0], i; break
+            else:
                 if lon_deg >= start_lon or lon_deg < end_lon:
-                    current_term = terms[i][0]
-                    break
-        # --- 修正點 2: 使用 utc_jpl 計算標準 JD，去除 ΔT 偏差 ---
+                    solar_term, current_idx = terms[i][0], i; break
+        
+        next_term = terms[(current_idx + 1) % len(terms)][0]
+        
         return {
-            "solar_term": current_term,
-            "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, current_term),
+            "solar_term": solar_term,
+            "solar_term_time": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_start": AstronomyEngine.find_term_time_skyfield(local_date, solar_term),
             "term_end": AstronomyEngine.find_term_time_skyfield(local_date, next_term),
             "julian_day": round(float(t.tt - 0.000787), 5),
             "ecliptic_longitude": round(lon_deg, 2),
             "equation_of_time": f"{eot}m",
             "sun_altitude": alt,
-            "utc_datetime": t.utc_iso(),
+            "utc_datetime": t.astimezone(taiwan_tz).strftime("%Y-%m-%d %H:%M:%S"),
             "local_timezone": "UTC+8",
             "gan_zhi": f"{year_gz} {AstronomyEngine.get_month_pillar(year_gz, solar_term)} {day_gz}"
         }
