@@ -1,3 +1,5 @@
 zhdate
 pandas
 openpyxl
+skyfield
+numpy
