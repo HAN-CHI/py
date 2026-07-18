@@ -1,7 +1,9 @@
 import math
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES,HUANGDAO_DAILY_SEQUENCE,MONTH_START_BRANCH_IDX
 from zhdate import ZhDate
-from datetime import datetime, timedelta
+from skyfield.api import load
+from skyfield.framelib import ecliptic_j2000
+from datetime import datetime, timedelta, timezone
 
 class PreciseCalendar:
     STEMS = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
