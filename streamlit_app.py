@@ -492,7 +492,7 @@ with tab5:
         c1.metric("年柱", year_val)
         c2.metric("月柱", month_val)
         c3.metric("日柱", day_val)
-        with c4:
+        c4.metric("節氣", astronomy_data["solar_term"])
             st.expander(f"節氣詳細資訊：{astronomy_data['solar_term']}"):
             st.write(f"**{astronomy_data['solar_term']}** 交節氣時間表：")
         
