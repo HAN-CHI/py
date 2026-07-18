@@ -164,20 +164,15 @@ class AstronomyEngine:
 
     @staticmethod
     def find_term_time(local_date, target_term_name):
-        """ 使用修正過的黃經搜尋，精確到分 """
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
-        
-        # 放大搜尋範圍至前後 30 天，確保涵蓋節氣
         base_dt = datetime.combine(local_date, datetime.min.time())
         low = base_dt - timedelta(days=30)
         high = base_dt + timedelta(days=30)
         
         best_mid = low
-        # 增加迭代次數至 35 次，確保分鐘級別完全收斂
         for _ in range(35):
             mid = low + (high - low) / 2
             utc_mid = mid - timedelta(hours=8)
-            
             y, m, d = utc_mid.year, utc_mid.month, utc_mid.day
             if m <= 2: 
                 y -= 1
@@ -187,9 +182,6 @@ class AstronomyEngine:
             jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_mid.hour + utc_mid.minute/60.0 + utc_mid.second/3600.0)/24.0
             
             current_lon = AstronomyEngine.get_ecliptic_longitude(jd)
-            
-            # 【關鍵修復】正確的二分法尋星邏輯：
-            # 判斷當前黃經與目標黃經的距離，若差值小於 180，代表時間「超前」了，上限要往下壓 (high = mid)
             diff = (current_lon - target_lon + 360) % 360
             if diff < 180: 
                 high = mid
@@ -200,11 +192,63 @@ class AstronomyEngine:
         return best_mid.strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
+    def get_month_pillar(year_gz, solar_term):
+        """ 使用五虎遁月法計算月柱 """
+        if not year_gz or len(year_gz) < 1:
+            return "未知月"
+        
+        year_stem = year_gz[0] # 取得年干
+        
+        # 節氣對應的月支
+        term_to_branch = {
+            "立春": "寅", "雨水": "寅",
+            "驚蟄": "卯", "春分": "卯",
+            "清明": "辰", "穀雨": "辰",
+            "立夏": "巳", "小滿": "巳",
+            "芒種": "午", "夏至": "午",
+            "小暑": "未", "大暑": "未",
+            "立秋": "申", "處暑": "申",
+            "白露": "酉", "秋分": "酉",
+            "寒露": "戌", "霜降": "戌",
+            "立冬": "亥", "小雪": "亥",
+            "大雪": "子", "冬至": "子",
+            "小寒": "丑", "大寒": "丑"
+        }
+        
+        month_branch = term_to_branch.get(solar_term, "未知")
+        if month_branch == "未知":
+            return "未知月"
+            
+        stems = "甲乙丙丁戊己庚辛壬癸"
+        branches = "寅卯辰巳午未申酉戌亥子丑"
+        
+        # 五虎遁起點對照
+        stem_starts = {
+            "甲": "丙", "己": "丙",
+            "乙": "戊", "庚": "戊",
+            "丙": "庚", "辛": "庚",
+            "丁": "壬", "壬": "壬",
+            "戊": "甲", "癸": "甲"
+        }
+        
+        start_stem = stem_starts.get(year_stem)
+        if not start_stem:
+            return f"未知{month_branch}月"
+            
+        start_stem_idx = stems.index(start_stem)
+        branch_idx = branches.index(month_branch)
+        
+        # 推算月干
+        month_stem_idx = (start_stem_idx + branch_idx) % 10
+        month_stem = stems[month_stem_idx]
+        
+        return f"{month_stem}{month_branch}月"
+
+    @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
         local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
         utc_dt = local_dt - timedelta(hours=8)
         
-        # 【關鍵修復】補上 1、2 月份的儒略日 (JD) 年份跨越修正，否則年初的黃經會算錯
         y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
         if m <= 2:
             y -= 1
@@ -222,7 +266,6 @@ class AstronomyEngine:
             start = terms_list[i][1]
             end = terms_list[(i+1)%24][1]
             
-            # 【關鍵修復】處理 345度(驚蟄) 跨越 0度(春分) 的 360 度邊界問題
             if start > end:
                 if lon_deg >= start or lon_deg < end:
                     solar_term = terms_list[i][0]
@@ -234,12 +277,11 @@ class AstronomyEngine:
                     current_idx = i
                     break
         
-        # 計算下一個節氣名稱
         next_term = terms_list[(current_idx + 1) % 24][0]
         
-        # 【關鍵修復】調整回傳格式，巧妙配合 streamlit_app.py 的 split(" ") 邏輯
-        # 填入 "未知月" 當作佔位符，讓 split 能夠切出三等分，精確還原「日柱」顯示！
-        formatted_gan_zhi = f"{year_gz} 未知月 {day_gz}"
+        # 【動態計算真實月柱】
+        month_gz = AstronomyEngine.get_month_pillar(year_gz, solar_term)
+        formatted_gan_zhi = f"{year_gz} {month_gz} {day_gz}"
         
         return {
             "solar_term": solar_term,
