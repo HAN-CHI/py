@@ -170,7 +170,8 @@ class AstronomyEngine:
     @staticmethod
     def get_solar_longitude_skyfield(t):
         astrometric = earth.at(t).observe(sun)
-        _, lon, _ = astrometric.ecliptic_latlon(epoch=ecliptic_j2000)
+        # 改用 ecliptic_frame
+        _, lon, _ = astrometric.ecliptic_latlon(epoch=ecliptic_frame)
         return lon.degrees
 
     @staticmethod
