@@ -156,7 +156,6 @@ class AstronomyEngine:
 
     @staticmethod
     def get_ecliptic_longitude(jd):
-        # 這是天文通用的黃經計算公式
         n = jd - 2451545.0
         L = (280.460 + 0.9856474 * n) % 360
         g = (357.528 + 0.9856003 * n) % 360
@@ -165,15 +164,13 @@ class AstronomyEngine:
 
     @staticmethod
     def find_term_time(local_date, target_term_name):
-        """ 計算精確交節時間 (基準為 UTC+8) """
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
-        # 設定搜尋範圍：在目標日期的前後 15 天內
-        low = datetime.combine(local_date, datetime.min.time()) - timedelta(days=15)
-        high = datetime.combine(local_date, datetime.min.time()) + timedelta(days=15)
+        # 搜尋範圍擴大為目標日期前後 30 天，確保能涵蓋節氣跳轉
+        low = datetime.combine(local_date, datetime.min.time()) - timedelta(days=30)
+        high = datetime.combine(local_date, datetime.min.time()) + timedelta(days=30)
         
-        for _ in range(25): # 增加迭代次數提高精度
+        for _ in range(25):
             mid = low + (high - low) / 2
-            # 轉換為 UTC 時間再算儒略日 (扣除8小時)
             utc_mid = mid - timedelta(hours=8)
             y, m, d = utc_mid.year, utc_mid.month, utc_mid.day
             if m <= 2: y -= 1; m += 12
@@ -188,36 +185,32 @@ class AstronomyEngine:
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
-        # 1. 時間運算
         local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
         utc_dt = local_dt - timedelta(hours=8)
-        y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
-        jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
+        jd = int(365.25 * (utc_dt.year + 4716)) + int(30.6001 * (utc_dt.month + 1)) + utc_dt.day - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
         
-        # 2. 黃經與節氣判定
         lon_deg = AstronomyEngine.get_ecliptic_longitude(jd)
-        terms = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
-        solar_term = "未知"
-        for i in range(24):
-            start, end = terms[i][1], terms[(i+1)%24][1]
-            if start <= lon_deg < (end if end > start else end + 360):
-                solar_term = terms[i][0]
-                break
-
-        # 找出當前節氣與下一個節氣
-        terms_list = [t[0] for t in sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])]
-        current_idx = terms_list.index(solar_term)
-        next_term = terms_list[(current_idx + 1) % 24]
+        terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         
-        # 3. 回傳完整資訊
+        solar_term = "未知"
+        current_idx = 0
+        for i in range(24):
+            start, end = terms_list[i][1], terms_list[(i+1)%24][1]
+            if start <= lon_deg < (end if end > start else end + 360):
+                solar_term = terms_list[i][0]
+                current_idx = i
+                break
+        
+        # 計算下一個節氣名稱
+        next_term = terms_list[(current_idx + 1) % 24][0]
+        
         return {
             "solar_term": solar_term,
             "solar_term_time": AstronomyEngine.find_term_time(local_date, solar_term),
+            "term_start": AstronomyEngine.find_term_time(local_date, solar_term),
+            "term_end": AstronomyEngine.find_term_time(local_date, next_term),
             "julian_day": round(jd, 5),
             "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "gan_zhi": f"{year_gz}年 {day_gz}日" # 簡化，避免月柱邏輯干擾
-            # 動態計算開始與結束時間
-            "term_start": AstronomyEngine.find_term_time(local_date, solar_term),
-            "term_end": AstronomyEngine.find_term_time(local_date, next_term),
+            "gan_zhi": f"{year_gz}年"
         }
