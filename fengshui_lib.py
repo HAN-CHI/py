@@ -3,7 +3,8 @@ import math
 from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES,HUANGDAO_DAILY_SEQUENCE,MONTH_START_BRANCH_IDX
 from zhdate import ZhDate
 from skyfield.api import load
-from skyfield.framelib import ecliptic_j2000
+from skyfield.data import spice
+from skyfield.framelib import ecliptic_frame
 from datetime import datetime, timedelta, timezone
 
 class PreciseCalendar:
