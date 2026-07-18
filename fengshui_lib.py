@@ -193,19 +193,24 @@ class AstronomyEngine:
 
         # 5. 計算傳統月柱 (依據黃經節氣精準節點推算)
         # 擇日學中，月干支是由節氣決定的（如黃經105度小暑到立秋前為乙未月）
-        month_offset = int((ecliptic_longitude - 15) / 30) % 12
-        month_branches = ["卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑", "寅"]
-        month_zhi = month_branches[month_offset]
-        
-        # 根據年干求月干 (五丙日起鼠頭公式)
+        # 5. 精確計算月干支 (採用五虎遁口訣)
+        # 丙午年 (丙年) 的正月為 庚寅月
+        # 五虎遁：丙辛之歲尋庚起 (丙年正月為庚寅)
         stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"]
-        year_gan_idx = stems.index(year_gz[0])
-        start_month_gan_idx = ((year_gan_idx % 5) * 2 + 2) % 10
-        # 配合節氣月支求月干
         branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"]
+        
+        # 丙年 (年干索引 2) 正月 (寅月) 為庚 (索引 6)
+        # 年干: 甲0, 乙1, 丙2, 丁3, 戊4, 己5, 庚6, 辛7, 壬8, 癸9
+        # 正月月干 = (年干索引 % 5) * 2 + 2
+        year_gan_idx = stems.index(year_gz[0])
+        first_month_gan_idx = ((year_gan_idx % 5) * 2 + 2) % 10
+        
+        # 根據節氣計算當前月支
+        # 卯:1, 辰:2, 巳:3, 午:4, 未:5, 申:6, 酉:7, 戌:8, 亥:9, 子:10, 丑:11, 寅:0
         month_zhi_idx = branches.index(month_zhi)
-        # 因正月為寅月，做相對位移
-        month_gan_idx = (start_month_gan_idx + month_zhi_idx - 2) % 10
+        
+        # 算出月干
+        month_gan_idx = (first_month_gan_idx + (month_zhi_idx - 2)) % 10
         month_gz = stems[month_gan_idx] + month_zhi
 
         # 6. 計算均時差 (Equation of Time)
