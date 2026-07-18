@@ -463,9 +463,8 @@ with tab5:
 
 
 
-    # 🛰️ 擴充功能：高精度天文物理觀測座標輸出
-    # 1. 呼叫引擎進行即時運算，取代原本的手動定義
-    # 這會根據您網頁上選定的 selected_date 與 selected_hour 自動計算
+# 🛰️ 擴充功能：高精度天文物理觀測座標輸出
+    # 呼叫引擎進行即時運算
     astronomy_data = AstronomyEngine.get_solar_details(
         selected_date, 
         selected_hour, 
@@ -473,31 +472,36 @@ with tab5:
         pillars["日柱"]
     )
     
-    # 2. 呈現邏輯 (現在 astronomy_data 會隨日期自動變動)
+    # 2. 呈現邏輯
     st.markdown("---")
     st.subheader("🗓️ 精確四柱與天文參數")
     
-    # 解析干支 (確保格式正確)
-    gz_parts = astronomy_data["gan_zhi"].split(" ")
-    year_val = gz_parts[0].replace("年", "")
-    month_val = gz_parts[1].replace("月", "")
-    day_val = gz_parts[2].replace("日", "")
+    # 防呆機制：確保 astronomy_data 有正確的 gan_zhi 字串
+    if "gan_zhi" in astronomy_data:
+        gz_parts = astronomy_data["gan_zhi"].split(" ")
+        # 確保有三個部分(年、月、日)
+        if len(gz_parts) >= 3:
+            year_val = gz_parts[0].replace("年", "")
+            month_val = gz_parts[1].replace("月", "")
+            day_val = gz_parts[2].replace("日", "")
+        else:
+            year_val, month_val, day_val = "未知", "未知", "未知"
+            
+        # 顯示四柱 (調整成適合的版面)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("年柱", year_val)
+        c2.metric("月柱", month_val)
+        c3.metric("日柱", day_val)
+        c4.metric("節氣", astronomy_data.get("solar_term", "未知"))
     
-    # 顯示四柱
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("年柱", year_val)
-    c2.metric("月柱", month_val)
-    c3.metric("日柱", day_val)
-    c4.metric("節氣", astronomy_data["solar_term"])
-    
-    # 顯示詳細數據
+    # 顯示詳細數據 (新增 .get() 確保如果欄位缺失不會報錯)
     with st.expander("查看詳細天文數據"):
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("儒略日", astronomy_data["julian_day"])
-        m2.metric("黃經", f"{astronomy_data['ecliptic_longitude']}°")
-        m3.metric("均時差", astronomy_data["equation_of_time"])
-        m4.metric("太陽高度角", f"{astronomy_data['sun_altitude']}°")
-        st.caption(f"UTC 時間: {astronomy_data['utc_datetime']} | 時區: {astronomy_data['local_timezone']}")
+        m1.metric("儒略日", astronomy_data.get("julian_day", "N/A"))
+        m2.metric("黃經", f"{astronomy_data.get('ecliptic_longitude', 0)}°")
+        m3.metric("均時差", astronomy_data.get("equation_of_time", "0m"))
+        m4.metric("太陽高度角", f"{astronomy_data.get('sun_altitude', 0)}°")
+        st.caption(f"UTC 時間: {astronomy_data.get('utc_datetime', 'N/A')} | 時區: {astronomy_data.get('local_timezone', 'UTC+8')}")
  
 
     # 3. 禁忌與斷語分析
