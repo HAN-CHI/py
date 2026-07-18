@@ -204,16 +204,30 @@ class AstronomyEngine:
     @staticmethod
     def find_term_time_skyfield(target_date, target_term_name):
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
+        
+        # 搜尋區間：以目標日期為中心前後 15 天
         t0 = ts.utc(target_date.year, target_date.month, target_date.day - 15)
         t1 = ts.utc(target_date.year, target_date.month, target_date.day + 15)
         
         for _ in range(40):
-            mid = ts.tt_jd((t0.tt + t1.tt) / 2)
-            if AstronomyEngine.get_solar_longitude_skyfield(mid) < target_lon:
+            # 取中點
+            mid_jd = (t0.tt + t1.tt) / 2
+            mid = ts.tt_jd(mid_jd)
+            
+            # 計算當前黃經與目標黃經的差異
+            curr_lon = AstronomyEngine.get_solar_longitude_skyfield(mid)
+            
+            # 處理跨 0 度的黃經差 (這是天文計算的標準做法)
+            diff = (curr_lon - target_lon + 180) % 360 - 180
+            
+            if diff < 0:
                 t0 = mid
             else:
                 t1 = mid
-        return t0.astimezone(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M")
+        
+        # 確保回傳時區正確 (UTC+8)
+        taiwan_tz = timezone(timedelta(hours=8))
+        return t0.astimezone(taiwan_tz).strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
     def get_month_pillar(year_gz, solar_term):
