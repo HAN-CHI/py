@@ -167,37 +167,51 @@ class AstronomyEngine:
         """ 使用修正過的黃經搜尋，精確到分 """
         target_lon = AstronomyEngine.TERMS_MAP.get(target_term_name, 0)
         
-        # 核心調整：搜尋範圍縮小至該節氣出現的特定月份前後
-        # 使用 datetime 確保無時區偏移
+        # 放大搜尋範圍至前後 30 天，確保涵蓋節氣
         base_dt = datetime.combine(local_date, datetime.min.time())
-        low = base_dt - timedelta(days=20)
-        high = base_dt + timedelta(days=20)
+        low = base_dt - timedelta(days=30)
+        high = base_dt + timedelta(days=30)
         
-        # 使用 30 次迭代，精度可達 1/2^30 天，遠高於分鐘
-        for _ in range(30):
+        best_mid = low
+        # 增加迭代次數至 35 次，確保分鐘級別完全收斂
+        for _ in range(35):
             mid = low + (high - low) / 2
-            # 轉換為 UTC 計算 JD
             utc_mid = mid - timedelta(hours=8)
+            
             y, m, d = utc_mid.year, utc_mid.month, utc_mid.day
-            if m <= 2: y -= 1; m += 12
-            A = int(y / 100); B = 2 - A + int(A / 4)
+            if m <= 2: 
+                y -= 1
+                m += 12
+            A = int(y / 100)
+            B = 2 - A + int(A / 4)
             jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_mid.hour + utc_mid.minute/60.0 + utc_mid.second/3600.0)/24.0
             
-            # 修正黃經判定：處理 360 度跨越問題
             current_lon = AstronomyEngine.get_ecliptic_longitude(jd)
-            # 將黃經標準化以便比較
+            
+            # 【關鍵修復】正確的二分法尋星邏輯：
+            # 判斷當前黃經與目標黃經的距離，若差值小於 180，代表時間「超前」了，上限要往下壓 (high = mid)
             diff = (current_lon - target_lon + 360) % 360
-            if diff > 180: # 跨越 0/360 度邊界
+            if diff < 180: 
                 high = mid
             else:
                 low = mid
-        return mid.strftime("%Y-%m-%d %H:%M")
+            best_mid = mid
+            
+        return best_mid.strftime("%Y-%m-%d %H:%M")
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
         local_dt = datetime.combine(local_date, datetime.min.time()) + timedelta(hours=local_hour)
         utc_dt = local_dt - timedelta(hours=8)
-        jd = int(365.25 * (utc_dt.year + 4716)) + int(30.6001 * (utc_dt.month + 1)) + utc_dt.day - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
+        
+        # 【關鍵修復】補上 1、2 月份的儒略日 (JD) 年份跨越修正，否則年初的黃經會算錯
+        y, m, d = utc_dt.year, utc_dt.month, utc_dt.day
+        if m <= 2:
+            y -= 1
+            m += 12
+        A = int(y / 100)
+        B = 2 - A + int(A / 4)
+        jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
         
         lon_deg = AstronomyEngine.get_ecliptic_longitude(jd)
         terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
@@ -205,14 +219,27 @@ class AstronomyEngine:
         solar_term = "未知"
         current_idx = 0
         for i in range(24):
-            start, end = terms_list[i][1], terms_list[(i+1)%24][1]
-            if start <= lon_deg < (end if end > start else end + 360):
-                solar_term = terms_list[i][0]
-                current_idx = i
-                break
+            start = terms_list[i][1]
+            end = terms_list[(i+1)%24][1]
+            
+            # 【關鍵修復】處理 345度(驚蟄) 跨越 0度(春分) 的 360 度邊界問題
+            if start > end:
+                if lon_deg >= start or lon_deg < end:
+                    solar_term = terms_list[i][0]
+                    current_idx = i
+                    break
+            else:
+                if start <= lon_deg < end:
+                    solar_term = terms_list[i][0]
+                    current_idx = i
+                    break
         
         # 計算下一個節氣名稱
         next_term = terms_list[(current_idx + 1) % 24][0]
+        
+        # 【關鍵修復】調整回傳格式，巧妙配合 streamlit_app.py 的 split(" ") 邏輯
+        # 填入 "未知月" 當作佔位符，讓 split 能夠切出三等分，精確還原「日柱」顯示！
+        formatted_gan_zhi = f"{year_gz} 未知月 {day_gz}"
         
         return {
             "solar_term": solar_term,
@@ -222,5 +249,5 @@ class AstronomyEngine:
             "julian_day": round(jd, 5),
             "ecliptic_longitude": round(lon_deg, 1),
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
-            "gan_zhi": f"{year_gz}年"
+            "gan_zhi": formatted_gan_zhi
         }
