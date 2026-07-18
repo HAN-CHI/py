@@ -492,7 +492,9 @@ with tab5:
         c1.metric("年柱", year_val)
         c2.metric("月柱", month_val)
         c3.metric("日柱", day_val)
-        c4.metric("節氣", astronomy_data.get("solar_term", "未知"))
+        with c4:
+            st.metric("節氣", astronomy_data["solar_term"])
+            st.caption(f"交節時間: {astronomy_data.get('solar_term_time', '計算中...')}")
     
     # 顯示詳細數據 (新增 .get() 確保如果欄位缺失不會報錯)
     with st.expander("查看詳細天文數據"):
