@@ -493,7 +493,7 @@ with tab5:
         c2.metric("月柱", month_val)
         c3.metric("日柱", day_val)
         c4.metric("節氣", astronomy_data["solar_term"])
-            st.expander(f"節氣詳細資訊：{astronomy_data['solar_term']}"):
+        with st.expander(f"節氣詳細資訊：{astronomy_data['solar_term']}"):
             st.write(f"**{astronomy_data['solar_term']}** 交節氣時間表：")
         
         # 使用欄位並排顯示開始與結束時間
