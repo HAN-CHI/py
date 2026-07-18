@@ -464,33 +464,40 @@ with tab5:
 
 
     # 🛰️ 擴充功能：高精度天文物理觀測座標輸出
-    # 1. 為了確保我們能正確解析 "丙午年 乙未月 戊子日" 這樣的格式
-    # 我們先對 gan_zhi 字串做簡單的分拆
-    gz_parts = astronomy_json["gan_zhi"].split(" ")
-    year_col_val = gz_parts[0].replace("年", "")
-    month_col_val = gz_parts[1].replace("月", "")
-    day_col_val = gz_parts[2].replace("日", "")
+    # 1. 呼叫引擎進行即時運算，取代原本的手動定義
+    # 這會根據您網頁上選定的 selected_date 與 selected_hour 自動計算
+    astronomy_data = AstronomyEngine.get_solar_details(
+        selected_date, 
+        selected_hour, 
+        pillars["年柱"], 
+        pillars["日柱"]
+    )
     
-    # 2. 定義四柱顯示區域
+    # 2. 呈現邏輯 (現在 astronomy_data 會隨日期自動變動)
     st.markdown("---")
-    st.subheader("🗓️ 精確四柱參數")
+    st.subheader("🗓️ 精確四柱與天文參數")
     
-    # 使用 4 個欄位讓排版整齊對齊
+    # 解析干支 (確保格式正確)
+    gz_parts = astronomy_data["gan_zhi"].split(" ")
+    year_val = gz_parts[0].replace("年", "")
+    month_val = gz_parts[1].replace("月", "")
+    day_val = gz_parts[2].replace("日", "")
+    
+    # 顯示四柱
     c1, c2, c3, c4 = st.columns(4)
+    c1.metric("年柱", year_val)
+    c2.metric("月柱", month_val)
+    c3.metric("日柱", day_val)
+    c4.metric("節氣", astronomy_data["solar_term"])
     
-    # 使用 st.metric 讓字體放大並顯得專業
-    c1.metric("年柱", year_col_val)
-    c2.metric("月柱", month_col_val)
-    c3.metric("日柱", day_col_val)
-    c4.metric("節氣", astronomy_json["solar_term"])
-
-    # 3. 如果您還想顯示剩下的技術參數，可以用 st.expander 收納起來，避免畫面雜亂
+    # 顯示詳細數據
     with st.expander("查看詳細天文數據"):
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("儒略日", astronomy_json["julian_day"])
-        m2.metric("黃經", f"{astronomy_json['ecliptic_longitude']}°")
-        m3.metric("均時差", astronomy_json["equation_of_time"])
-        m4.metric("太陽高度角", f"{astronomy_json['sun_altitude']}°")
+        m1.metric("儒略日", astronomy_data["julian_day"])
+        m2.metric("黃經", f"{astronomy_data['ecliptic_longitude']}°")
+        m3.metric("均時差", astronomy_data["equation_of_time"])
+        m4.metric("太陽高度角", f"{astronomy_data['sun_altitude']}°")
+        st.caption(f"UTC 時間: {astronomy_data['utc_datetime']} | 時區: {astronomy_data['local_timezone']}")
  
 
     # 3. 禁忌與斷語分析
