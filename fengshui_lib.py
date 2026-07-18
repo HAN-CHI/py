@@ -156,11 +156,68 @@ class AstronomyEngine:
 
     @staticmethod
     def get_ecliptic_longitude(jd):
-        n = jd - 2451545.0
-        L = (280.460 + 0.9856474 * n) % 360
-        g = (357.528 + 0.9856003 * n) % 360
-        g_rad = math.radians(g)
-        return (L + 1.915 * math.sin(g_rad) + 0.020 * math.sin(2 * g_rad)) % 360
+        """ 升級版太陽真黃經演算法 (提升攝動項精度) """
+        T = (jd - 2451545.0) / 36525.0
+        # 太陽平黃經
+        L0 = (280.46646 + 36000.76983 * T + 0.0003032 * T**2) % 360
+        # 太陽平近點角
+        M = (357.52911 + 35999.05029 * T - 0.0001537 * T**2) % 360
+        
+        M_rad = math.radians(M)
+        # 黃經中心差 (增加高階項次)
+        C = (1.914602 - 0.004817 * T - 0.000014 * T**2) * math.sin(M_rad) + \
+            (0.019993 - 0.000101 * T) * math.sin(2 * M_rad) + \
+            0.000289 * math.sin(3 * M_rad)
+            
+        true_lon = (L0 + C) % 360
+        return true_lon
+
+    @staticmethod
+    def get_astro_params(jd, true_lon):
+        """ 計算均時差與太陽高度角 (以台中市西屯區 緯度24.17/經度120.63 為觀測基準) """
+        T = (jd - 2451545.0) / 36525.0
+        
+        # 1. 計算均時差 (Equation of Time)
+        L0 = (280.46646 + 36000.76983 * T) % 360
+        M = (357.52911 + 35999.05029 * T) % 360
+        e = 0.016708634 - 0.000042037 * T
+        
+        epsilon = 23.439291 - 0.0130042 * T
+        y = math.tan(math.radians(epsilon / 2)) ** 2
+        
+        L0_rad = math.radians(L0)
+        M_rad = math.radians(M)
+        
+        eot_minutes = 4.0 * math.degrees(
+            y * math.sin(2 * L0_rad) - 
+            2 * e * math.sin(M_rad) + 
+            4 * e * y * math.sin(M_rad) * math.cos(2 * L0_rad) - 
+            0.5 * (y ** 2) * math.sin(4 * L0_rad) - 
+            1.25 * (e ** 2) * math.sin(2 * M_rad)
+        )
+        
+        # 2. 計算太陽高度角 (Solar Altitude)
+        lat = 24.17
+        lon = 120.63
+        
+        declination = math.degrees(math.asin(math.sin(math.radians(epsilon)) * math.sin(math.radians(true_lon))))
+        
+        jd_frac = (jd + 0.5) % 1.0 
+        utc_hours = jd_frac * 24.0
+        lmt_hours = utc_hours + (lon / 15.0)
+        lat_hours = lmt_hours + (eot_minutes / 60.0)
+        H = (lat_hours - 12.0) * 15.0
+        
+        lat_rad = math.radians(lat)
+        dec_rad = math.radians(declination)
+        H_rad = math.radians(H)
+        
+        altitude = math.degrees(math.asin(
+            math.sin(lat_rad) * math.sin(dec_rad) + 
+            math.cos(lat_rad) * math.cos(dec_rad) * math.cos(H_rad)
+        ))
+        
+        return round(eot_minutes, 1), round(altitude, 1)
 
     @staticmethod
     def find_term_time(local_date, target_term_name):
@@ -170,7 +227,7 @@ class AstronomyEngine:
         high = base_dt + timedelta(days=30)
         
         best_mid = low
-        for _ in range(35):
+        for _ in range(40): # 增加迭代次數至 40 次，確保時間收斂至小於一分鐘
             mid = low + (high - low) / 2
             utc_mid = mid - timedelta(hours=8)
             y, m, d = utc_mid.year, utc_mid.month, utc_mid.day
@@ -193,56 +250,36 @@ class AstronomyEngine:
 
     @staticmethod
     def get_month_pillar(year_gz, solar_term):
-        """ 使用五虎遁月法計算月柱 """
         if not year_gz or len(year_gz) < 1:
             return "未知月"
-        
-        year_stem = year_gz[0] # 取得年干
-        
-        # 節氣對應的月支
+        year_stem = year_gz[0]
         term_to_branch = {
-            "立春": "寅", "雨水": "寅",
-            "驚蟄": "卯", "春分": "卯",
-            "清明": "辰", "穀雨": "辰",
-            "立夏": "巳", "小滿": "巳",
-            "芒種": "午", "夏至": "午",
-            "小暑": "未", "大暑": "未",
-            "立秋": "申", "處暑": "申",
-            "白露": "酉", "秋分": "酉",
-            "寒露": "戌", "霜降": "戌",
-            "立冬": "亥", "小雪": "亥",
-            "大雪": "子", "冬至": "子",
-            "小寒": "丑", "大寒": "丑"
+            "立春": "寅", "雨水": "寅", "驚蟄": "卯", "春分": "卯",
+            "清明": "辰", "穀雨": "辰", "立夏": "巳", "小滿": "巳",
+            "芒種": "午", "夏至": "午", "小暑": "未", "大暑": "未",
+            "立秋": "申", "處暑": "申", "白露": "酉", "秋分": "酉",
+            "寒露": "戌", "霜降": "戌", "立冬": "亥", "小雪": "亥",
+            "大雪": "子", "冬至": "子", "小寒": "丑", "大寒": "丑"
         }
-        
         month_branch = term_to_branch.get(solar_term, "未知")
-        if month_branch == "未知":
-            return "未知月"
+        if month_branch == "未知": return "未知月"
             
         stems = "甲乙丙丁戊己庚辛壬癸"
         branches = "寅卯辰巳午未申酉戌亥子丑"
-        
-        # 五虎遁起點對照
         stem_starts = {
-            "甲": "丙", "己": "丙",
-            "乙": "戊", "庚": "戊",
-            "丙": "庚", "辛": "庚",
-            "丁": "壬", "壬": "壬",
+            "甲": "丙", "己": "丙", "乙": "戊", "庚": "戊",
+            "丙": "庚", "辛": "庚", "丁": "壬", "壬": "壬",
             "戊": "甲", "癸": "甲"
         }
         
         start_stem = stem_starts.get(year_stem)
-        if not start_stem:
-            return f"未知{month_branch}月"
+        if not start_stem: return f"未知{month_branch}月"
             
         start_stem_idx = stems.index(start_stem)
         branch_idx = branches.index(month_branch)
-        
-        # 推算月干
         month_stem_idx = (start_stem_idx + branch_idx) % 10
-        month_stem = stems[month_stem_idx]
         
-        return f"{month_stem}{month_branch}月"
+        return f"{stems[month_stem_idx]}{month_branch}月"
 
     @staticmethod
     def get_solar_details(local_date, local_hour, year_gz, day_gz):
@@ -258,14 +295,16 @@ class AstronomyEngine:
         jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + B - 1524.5 + (utc_dt.hour + utc_dt.minute/60.0)/24.0
         
         lon_deg = AstronomyEngine.get_ecliptic_longitude(jd)
-        terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         
+        # 取得均時差與高度角
+        eot, alt = AstronomyEngine.get_astro_params(jd, lon_deg)
+        
+        terms_list = sorted(AstronomyEngine.TERMS_MAP.items(), key=lambda x: x[1])
         solar_term = "未知"
         current_idx = 0
         for i in range(24):
             start = terms_list[i][1]
             end = terms_list[(i+1)%24][1]
-            
             if start > end:
                 if lon_deg >= start or lon_deg < end:
                     solar_term = terms_list[i][0]
@@ -278,8 +317,6 @@ class AstronomyEngine:
                     break
         
         next_term = terms_list[(current_idx + 1) % 24][0]
-        
-        # 【動態計算真實月柱】
         month_gz = AstronomyEngine.get_month_pillar(year_gz, solar_term)
         formatted_gan_zhi = f"{year_gz} {month_gz} {day_gz}"
         
@@ -290,6 +327,8 @@ class AstronomyEngine:
             "term_end": AstronomyEngine.find_term_time(local_date, next_term),
             "julian_day": round(jd, 5),
             "ecliptic_longitude": round(lon_deg, 1),
+            "equation_of_time": f"{eot}m",  # 補回均時差
+            "sun_altitude": alt,            # 補回高度角
             "utc_datetime": utc_dt.strftime("%Y-%m-%dT%H:%M:%S"),
             "gan_zhi": formatted_gan_zhi
         }
