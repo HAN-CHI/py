@@ -464,26 +464,33 @@ with tab5:
 
 
     # 🛰️ 擴充功能：高精度天文物理觀測座標輸出
+    # 1. 為了確保我們能正確解析 "丙午年 乙未月 戊子日" 這樣的格式
+    # 我們先對 gan_zhi 字串做簡單的分拆
+    gz_parts = astronomy_json["gan_zhi"].split(" ")
+    year_col_val = gz_parts[0].replace("年", "")
+    month_col_val = gz_parts[1].replace("月", "")
+    day_col_val = gz_parts[2].replace("日", "")
+    
+    # 2. 定義四柱顯示區域
     st.markdown("---")
-    st.subheader("🛰️ 現代天文物理觀測指標 (JSON 資料庫規格)")
+    st.subheader("🗓️ 精確四柱參數")
     
-    # 傳入目前網頁選定的日期、時辰，以及系統原本算出的年柱與日柱
-    astronomy_json = AstronomyEngine.get_solar_details(
-        selected_date, 
-        selected_hour, 
-        pillars["年柱"], 
-        pillars["日柱"]
-    )
+    # 使用 4 個欄位讓排版整齊對齊
+    c1, c2, c3, c4 = st.columns(4)
     
-    # 1. 以標準美觀的 JSON 樹狀結構完整呈現
-    st.json(astronomy_json)
-    
-    # 2. 額外提供精緻的儀表板小卡片，方便一目了然
-    col_ast1, col_ast2, col_ast3, col_ast4 = st.columns(4)
-    col_ast1.metric("儒略日 (Julian Day)", f"{astronomy_json['julian_day']}")
-    col_ast2.metric("太陽黃經 (Ecliptic)", f"{astronomy_json['ecliptic_longitude']}°")
-    col_ast3.metric("均時差 (EoT)", astronomy_json['equation_of_time'])
-    col_ast4.metric("即時太陽高度角", f"{astronomy_json['sun_altitude']}°")
+    # 使用 st.metric 讓字體放大並顯得專業
+    c1.metric("年柱", year_col_val)
+    c2.metric("月柱", month_col_val)
+    c3.metric("日柱", day_col_val)
+    c4.metric("節氣", astronomy_json["solar_term"])
+
+    # 3. 如果您還想顯示剩下的技術參數，可以用 st.expander 收納起來，避免畫面雜亂
+    with st.expander("查看詳細天文數據"):
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("儒略日", astronomy_json["julian_day"])
+        m2.metric("黃經", f"{astronomy_json['ecliptic_longitude']}°")
+        m3.metric("均時差", astronomy_json["equation_of_time"])
+        m4.metric("太陽高度角", f"{astronomy_json['sun_altitude']}°")
  
 
     # 3. 禁忌與斷語分析
