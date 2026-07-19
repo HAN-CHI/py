@@ -9,7 +9,7 @@ from zhdate import ZhDate
 from config_data import BURIAL_RULES_60
 importlib.reload(fengshui_lib)
 from fengshui_lib import PreciseCalendar,TimeSafetyEngine,TimeEngine,HuangDaoEngine,DailyHuangDaoEngine,AstronomyEngine,CalendarEngine
-from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES
+from fengshui_db import CALENDAR_RULES,PENGZU_STEMS,PENGZU_BRANCHES,HUANGDAO_GODS,HUANGDAO_START_RULES,JIANCHU_INFO
 
 
 # 設定網頁標題與圖示
@@ -527,18 +527,21 @@ with tab5:
     # 在介面上顯示
     st.markdown("---")
     st.subheader("🏛️ 十二建除 (十二神)")
-    st.info(f"今日為：**{jianchu_god}日**")
+    st.info(f"今日({day_pillar_str}日)為：**{jianchu_god}日**")
     
-    # 可選：加入建除的簡單解釋
-    jianchu_desc = {
-        "建": "建基立業，吉事可辦。", "除": "掃除惡煞，置新去舊。",
-        "滿": "圓滿豐收，宜營造與開張。", "平": "平平無奇，吉凶相半。",
-        "定": "安定有序，宜訂盟交易。", "執": "執行事務，宜建屋求財。",
-        "破": "破裂破損，諸事不宜。", "危": "危險震動，諸事小心。",
-        "成": "成就喜慶，宜嫁娶參拜。", "收": "收斂收穫，宜採購納財。",
-        "開": "開拓啟動，宜入學開店。", "閉": "閉鎖隱蔽，宜埋葬修造。"
-    }
-    st.write(f"說明：{jianchu_desc.get(jianchu_god, '')}")
+    # 取得當前日期的詳細資訊
+    info = JIANCHU_INFO.get(jianchu_god, {})
+    
+    # 使用 Expander 讓介面更專業
+    with st.expander(f"查看 {jianchu_god}日 的詳細宜忌"):
+        st.write(f"**說明**：{info.get('說明', '無說明')}")
+        
+        # 使用欄位顯示宜忌，這樣更清晰
+        c_y, c_j = st.columns(2)
+        with c_y:
+            st.success(f"✅ 宜：{info.get('宜', '無')}")
+        with c_j:
+            st.error(f"❌ 忌：{info.get('忌', '無')}")
 
     
 
