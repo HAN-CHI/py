@@ -545,29 +545,34 @@ with tab5:
     #st.info(f"**日課吉凶：{record.get('吉凶', '平')}** | {record.get('斷語', '無紀錄')}")
 
 
-    # 讀取並檢查狀態
-    pillars = st.session_state.get('pillars')
-    lunar_obj = st.session_state.get('lunar_obj')
-    
-    # 嚴格的資料檢查 (防止 TypeError)
-    if isinstance(pillars, dict) and "日柱" in pillars and lunar_obj:
-        day_pillar_str = pillars["日柱"]
+        # 2. 取得地支與農曆月份
         day_zhi = day_pillar_str[1]
+        day_zhi_idx = PreciseCalendar.BRANCHES.index(day_zhi)
+        current_month = lunar_obj.lunar_month
         
-        try:
-            day_zhi_idx = PreciseCalendar.BRANCHES.index(day_zhi)
-            current_month = lunar_obj.lunar_month
-            jianchu_god = CalendarEngine.get_jianchu(current_month, day_zhi_idx)
+        # 3. 計算建除神煞
+        jianchu_god = CalendarEngine.get_jianchu(current_month, day_zhi_idx)
+        
+        # 4. 在介面上顯示
+        st.markdown("---")
+        st.subheader("🏛️ 十二建除 (十二神)")
+        st.info(f"今日({day_pillar_str}日)為：**{jianchu_god}日**")
+        
+        # 5. 取得詳細資訊 (確保已 import JIANCHU_INFO)
+        from fengshui_db import JIANCHU_INFO
+        info = JIANCHU_INFO.get(jianchu_god, {})
+        
+        # 6. 使用 Expander 讓介面更專業
+        with st.expander(f"查看 {jianchu_god}日 的詳細宜忌"):
+            st.write(f"**說明**：{info.get('說明', '無說明')}")
             
-            # --- UI 渲染 ---
-            st.markdown("---")
-            st.subheader("🏛️ 十二建除 (十二神)")
-            st.info(f"今日({day_pillar_str}日)為：**{jianchu_god}日**")
-            
-            info = JIANCHU_INFO.get(jianchu_god, {})
-            with st.expander(f"查看 {jianchu_god}日 的詳細宜忌"):
-                st.write(f"**說明**：{info.get('說明', '無說明')}")
-                c_y, c_j = st.columns(2)
-                c_y.success(f"✅ 宜：{info.get('宜', '無')}")
-                c_j.error(f"❌ 忌：{info.get('忌', '無')}")
+            c_y, c_j = st.columns(2)
+            with c_y:
+                st.success(f"✅ 宜：{info.get('宜', '無')}")
+            with c_j:
+                st.error(f"❌ 忌：{info.get('忌', '無')}")
+    else:
+        st.warning("正在初始化曆法資料，請稍候...")
+
+
 
