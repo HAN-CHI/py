@@ -420,7 +420,9 @@ with tab5:
         selected_date = st.date_input("選擇日期", st.session_state.get('latest_date', datetime.now().date()))
     with col_hour:
         selected_hour = st.slider("選擇時辰 (小時)", 0, 23, 12)
-
+        
+    lunar = ZhDate.from_datetime(datetime.combine(selected_date, datetime.min.time()))
+    
    # 2. 核心運算
     pillars = PreciseCalendar.get_four_pillars(selected_date.year, selected_date.month, selected_date.day, selected_hour)
 
