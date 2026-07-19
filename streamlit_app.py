@@ -511,7 +511,34 @@ with tab5:
         m3.metric("均時差", astronomy_data.get("equation_of_time", "0m"))
         m4.metric("太陽高度角", f"{astronomy_data.get('sun_altitude', 0)}°")
         st.caption(f"UTC: {astronomy_data.get('utc_datetime', 'N/A')} | 時區: {astronomy_data.get('local_timezone', 'UTC+8')}")
- 
+
+    # 取得當前日期地支索引
+    day_zhi = pillars["日柱"][1]
+    day_zhi_idx = PreciseCalendar.BRANCHES.index(day_zhi)
+    
+    # 這裡需要取得農曆月份，建議使用您現有的 lunar 對象
+    # 假設您已在上方取得 lunar = ZhDate.from_datetime(selected_date)
+    current_month = lunar.lunar_month
+    
+    jianchu_god = CalendarEngine.get_jianchu(current_month, day_zhi_idx)
+    
+    # 在介面上顯示
+    st.markdown("---")
+    st.subheader("🏛️ 十二建除 (十二神)")
+    st.info(f"今日為：**{jianchu_god}日**")
+    
+    # 可選：加入建除的簡單解釋
+    jianchu_desc = {
+        "建": "建基立業，吉事可辦。", "除": "掃除惡煞，置新去舊。",
+        "滿": "圓滿豐收，宜營造與開張。", "平": "平平無奇，吉凶相半。",
+        "定": "安定有序，宜訂盟交易。", "執": "執行事務，宜建屋求財。",
+        "破": "破裂破損，諸事不宜。", "危": "危險震動，諸事小心。",
+        "成": "成就喜慶，宜嫁娶參拜。", "收": "收斂收穫，宜採購納財。",
+        "開": "開拓啟動，宜入學開店。", "閉": "閉鎖隱蔽，宜埋葬修造。"
+    }
+    st.write(f"說明：{jianchu_desc.get(jianchu_god, '')}")
+
+    
 
     # 3. 禁忌與斷語分析
     st.markdown("---")
