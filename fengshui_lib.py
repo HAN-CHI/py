@@ -50,20 +50,21 @@ class PreciseCalendar:
 
 
 class CalendarEngine:
+    # 將對照表移進類別內，變成類別變數
+    MONTH_JIAN_BRANCH_IDX = {
+        1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 
+        7: 8, 8: 9, 9: 10, 10: 11, 11: 0, 12: 1
+    }
+    
+    JIANCHU_SEQUENCE = ["建", "除", "滿", "平", "定", "執", "破", "危", "成", "收", "開", "閉"]
+
     @staticmethod
     def get_jianchu(lunar_month, day_branch_idx):
-        """
-        lunar_month: 農曆月份 (1-12)
-        day_branch_idx: 當日地支索引 (子=0, 丑=1, ..., 亥=11)
-        """
-        # 1. 取得該月「建」的起始地支索引
-        start_idx = MONTH_JIAN_BRANCH_IDX.get(lunar_month, 2)
+        # 使用 self.MONTH_JIAN_BRANCH_IDX 讀取，或直接使用類別名稱讀取
+        start_idx = CalendarEngine.MONTH_JIAN_BRANCH_IDX.get(lunar_month, 2)
         
-        # 2. 計算偏移量
         offset = (day_branch_idx - start_idx) % 12
-        
-        # 3. 返回對應名稱
-        return JIANCHU_SEQUENCE[offset]
+        return CalendarEngine.JIANCHU_SEQUENCE[offset]
 
 
 class HuangDaoEngine:
