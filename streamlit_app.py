@@ -570,8 +570,4 @@ with tab5:
                 c_y, c_j = st.columns(2)
                 c_y.success(f"✅ 宜：{info.get('宜', '無')}")
                 c_j.error(f"❌ 忌：{info.get('忌', '無')}")
-        
-        except Exception as e:
-            st.error(f"建除計算過程錯誤: {e}")
-    else:
-        st.warning("正在讀取曆法數據...")
+
