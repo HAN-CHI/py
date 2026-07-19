@@ -51,26 +51,20 @@ class PreciseCalendar:
 
 class CalendarEngine:
     @staticmethod
-    def get_jianchu(lunar_date_idx):
-        """根據農曆日期索引計算建除十二神"""
-        # 需配合節氣，這裡僅為結構範例
-        return CALENDAR_RULES["JianChu"]["sequence"][lunar_date_idx % 12]
+    def get_jianchu(lunar_month, day_branch_idx):
+        """
+        lunar_month: 農曆月份 (1-12)
+        day_branch_idx: 當日地支索引 (子=0, 丑=1, ..., 亥=11)
+        """
+        # 1. 取得該月「建」的起始地支索引
+        start_idx = MONTH_JIAN_BRANCH_IDX.get(lunar_month, 2)
+        
+        # 2. 計算偏移量
+        offset = (day_branch_idx - start_idx) % 12
+        
+        # 3. 返回對應名稱
+        return JIANCHU_SEQUENCE[offset]
 
-    @staticmethod
-    def get_constellation(date_delta):
-        """根據與基點日期的天數差，推算二十八宿"""
-        return CALENDAR_RULES["Constellations"]["sequence"][date_delta % 28]
-
-def get_today_pengzu(gan, zhi):
-    """
-    根據當日干支，返回對應的百忌說明。
-    gan: 天干字串 (如 '甲')
-    zhi: 地支字串 (如 '子')
-    """
-    return {
-        "天干百忌": PENGZU_STEMS.get(gan, "今日天干無特殊禁忌。"),
-        "地支百忌": PENGZU_BRANCHES.get(zhi, "今日地支無特殊禁忌。")
-    }
 
 class HuangDaoEngine:
     SEQUENCE = ["青龍", "明堂", "天刑", "朱雀", "金匱", "天德", "白虎", "玉堂", "天牢", "玄武", "司命", "勾陳"]
