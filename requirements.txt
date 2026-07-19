@@ -1,5 +1,0 @@
-skyfield>=1.49
-numpy>=1.26.0
-zhdate
-pandas
-openpyxl
