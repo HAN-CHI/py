@@ -514,6 +514,10 @@ with tab5:
         m4.metric("太陽高度角", f"{astronomy_data.get('sun_altitude', 0)}°")
         st.caption(f"UTC: {astronomy_data.get('utc_datetime', 'N/A')} | 時區: {astronomy_data.get('local_timezone', 'UTC+8')}")
 
+    day_pillar_str = st.session_state.get('day_val', '甲子')
+    lunar_obj = st.session_state.get('lunar_obj')
+    pillars = st.session_state.get('pillars')
+    
     if lunar_obj and pillars:
         # 2. 取得地支與農曆月份
         day_zhi = day_pillar_str[1]
